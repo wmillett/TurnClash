@@ -8,19 +8,19 @@ using DG.Tweening;
 public class CodexPanelManager : MonoBehaviour
 {
     [Header("UI References")]
-    [SerializeField] private RectTransform codexPanel;
-    [SerializeField] private GameObject menuPage;
-    [SerializeField] private GameObject entryPage;
-    [SerializeField] private Button toggleButton;
-    [SerializeField] private Button backButton;
-    [SerializeField] private Transform categoryContainer;
-    [SerializeField] private Transform subcategoryContainer;
-    [SerializeField] private Transform entryContainer;
+    [SerializeField] public RectTransform codexPanel;
+    [SerializeField] public GameObject menuPage;
+    [SerializeField] public GameObject entryPage;
+    [SerializeField] public Button toggleButton;
+    [SerializeField] public Button backButton;
+    [SerializeField] public Transform categoryContainer;
+    [SerializeField] public Transform subcategoryContainer;
+    [SerializeField] public Transform entryContainer;
     
     [Header("Entry Page References")]
-    [SerializeField] private TextMeshProUGUI entryTitleText;
-    [SerializeField] private TextMeshProUGUI entryDescriptionText;
-    [SerializeField] private Image entryImage;
+    [SerializeField] public TextMeshProUGUI entryTitleText;
+    [SerializeField] public TextMeshProUGUI entryDescriptionText;
+    [SerializeField] public Image entryImage;
     
     [Header("Data")]
     [SerializeField] private TextAsset codexJsonFile;
