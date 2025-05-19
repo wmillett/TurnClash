@@ -75,10 +75,17 @@ public class CodexPanelManager : MonoBehaviour
         // Setup category buttons
         foreach (CodexCategory category in System.Enum.GetValues(typeof(CodexCategory)))
         {
-            Button categoryButton = categoryContainer.Find(category.ToString())?.GetComponent<Button>();
-            if (categoryButton != null)
+            // Find any button in the categoryContainer
+            Button[] categoryButtons = categoryContainer.GetComponentsInChildren<Button>();
+            foreach (Button categoryButton in categoryButtons)
             {
-                categoryButton.onClick.AddListener(() => OnCategorySelected(category));
+                // Check if the button's text matches the category name
+                TextMeshProUGUI buttonText = categoryButton.GetComponentInChildren<TextMeshProUGUI>();
+                if (buttonText != null && buttonText.text == category.ToString())
+                {
+                    categoryButton.onClick.AddListener(() => OnCategorySelected(category));
+                    break;
+                }
             }
         }
     }

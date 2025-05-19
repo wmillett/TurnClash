@@ -6,6 +6,15 @@ public class CodexPanelSetup : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private CodexPanelManager panelManager;
+    [SerializeField] private GameObject menuPage;
+    [SerializeField] private Transform categoryContainer;
+    [SerializeField] private Transform subcategoryContainer;
+    [SerializeField] private GameObject entryPage;
+    [SerializeField] private Button toggleButton;
+    [SerializeField] private Button backButton;
+    [SerializeField] private TextMeshProUGUI entryTitleText;
+    [SerializeField] private TextMeshProUGUI entryDescriptionText;
+    [SerializeField] private Image entryImage;
     
     private void Awake()
     {
@@ -14,7 +23,16 @@ public class CodexPanelSetup : MonoBehaviour
             panelManager = GetComponent<CodexPanelManager>();
         }
         
-        SetupUI();
+        // Assign references to panel manager
+        panelManager.menuPage = menuPage;
+        panelManager.entryPage = entryPage;
+        panelManager.toggleButton = toggleButton;
+        panelManager.backButton = backButton;
+        panelManager.categoryContainer = categoryContainer;
+        panelManager.subcategoryContainer = subcategoryContainer;
+        panelManager.entryTitleText = entryTitleText;
+        panelManager.entryDescriptionText = entryDescriptionText;
+        panelManager.entryImage = entryImage;
     }
     
     private void SetupUI()
@@ -45,16 +63,32 @@ public class CodexPanelSetup : MonoBehaviour
         GameObject categoryContainer = CreateContainer("CategoryContainer", menuPage.transform);
         categoryContainer.GetComponent<VerticalLayoutGroup>().spacing = 10;
         
-        // Create category buttons
+        // Create category buttons only if they don't exist
         string[] categories = { "Characters", "History", "Locations", "Organizations" };
         foreach (string category in categories)
         {
-            GameObject categoryButton = CreateButton(category, Vector2.zero);
-            categoryButton.transform.SetParent(categoryContainer.transform, false);
-            TextMeshProUGUI buttonText = categoryButton.GetComponentInChildren<TextMeshProUGUI>();
-            buttonText.text = category;
-            buttonText.fontSize = 18;
-            buttonText.fontStyle = FontStyles.Bold;
+            // Check if a button with this category name already exists
+            bool buttonExists = false;
+            foreach (Transform child in categoryContainer.transform)
+            {
+                TextMeshProUGUI buttonText = child.GetComponentInChildren<TextMeshProUGUI>();
+                if (buttonText != null && buttonText.text == category)
+                {
+                    buttonExists = true;
+                    break;
+                }
+            }
+            
+            // Only create the button if it doesn't exist
+            if (!buttonExists)
+            {
+                GameObject categoryButton = CreateButton(category, Vector2.zero);
+                categoryButton.transform.SetParent(categoryContainer.transform, false);
+                TextMeshProUGUI buttonText = categoryButton.GetComponentInChildren<TextMeshProUGUI>();
+                buttonText.text = category;
+                buttonText.fontSize = 18;
+                buttonText.fontStyle = FontStyles.Bold;
+            }
         }
         
         // Create subcategory container
