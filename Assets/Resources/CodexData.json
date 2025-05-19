@@ -1,0 +1,36 @@
+{
+    "entries": [
+        {
+            "id": "char_cabinet_1",
+            "title": "Lileas Graf",
+            "description": "A prominent political figure known for her strategic mind and unwavering determination. She has served in various cabinet positions throughout her career.",
+            "imagePath": "Characters/Cabinet/lileas_graf",
+            "category": "Characters",
+            "subcategory": "Cabinet"
+        },
+        {
+            "id": "char_world_1",
+            "title": "President Rayne",
+            "description": "The current president of the nation, known for his progressive policies and diplomatic approach to international relations.",
+            "imagePath": "Characters/WorldLeaders/president_rayne",
+            "category": "Characters",
+            "subcategory": "World Leaders"
+        },
+        {
+            "id": "loc_city_1",
+            "title": "Holsord",
+            "description": "The capital city and political center of the nation. A bustling metropolis that combines modern architecture with historical landmarks.",
+            "imagePath": "Locations/Cities/holsord",
+            "category": "Locations",
+            "subcategory": "Cities"
+        },
+        {
+            "id": "org_1",
+            "title": "United Contana",
+            "description": "A major international organization focused on promoting cooperation and development among member nations.",
+            "imagePath": "Organizations/united_contana",
+            "category": "Organizations",
+            "subcategory": "International"
+        }
+    ]
+} 
