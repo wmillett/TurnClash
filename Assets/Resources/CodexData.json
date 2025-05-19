@@ -31,6 +31,30 @@
             "imagePath": "Organizations/united_contana",
             "category": "Organizations",
             "subcategory": "International"
+        },
+        {
+            "id": "char1",
+            "title": "Character 1",
+            "description": "This is a description of Character 1",
+            "imagePath": "Images/character1",
+            "category": "Characters",
+            "subcategory": "Main Characters"
+        },
+        {
+            "id": "char2",
+            "title": "Character 2",
+            "description": "This is a description of Character 2",
+            "imagePath": "Images/character2",
+            "category": "Characters",
+            "subcategory": "Main Characters"
+        },
+        {
+            "id": "hist1",
+            "title": "Historical Event 1",
+            "description": "This is a description of Historical Event 1",
+            "imagePath": "Images/history1",
+            "category": "History",
+            "subcategory": "Ancient History"
         }
     ]
 } 

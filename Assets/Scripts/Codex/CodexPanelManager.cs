@@ -7,27 +7,26 @@ using DG.Tweening;
 
 public class CodexPanelManager : MonoBehaviour
 {
-    [Header("UI References")]
-    [SerializeField] public RectTransform codexPanel;
-    [SerializeField] public GameObject menuPage;
-    [SerializeField] public GameObject entryPage;
-    [SerializeField] public Button toggleButton;
-    [SerializeField] public Button backButton;
-    [SerializeField] public Transform categoryContainer;
-    [SerializeField] public Transform subcategoryContainer;
-    [SerializeField] public Transform entryContainer;
+    // UI References
+    private RectTransform codexPanel;
+    private GameObject menuPage;
+    private GameObject entryPage;
+    private Button toggleButton;
+    private Button backButton;
+    private Transform categoryContainer;
+    private Transform subcategoryContainer;
     
-    [Header("Entry Page References")]
-    [SerializeField] public TextMeshProUGUI entryTitleText;
-    [SerializeField] public TextMeshProUGUI entryDescriptionText;
-    [SerializeField] public Image entryImage;
+    // Entry Page References
+    private TextMeshProUGUI entryTitleText;
+    private TextMeshProUGUI entryDescriptionText;
+    private Image entryImage;
     
-    [Header("Data")]
-    [SerializeField] private TextAsset codexJsonFile;
+    // Data
+    private TextAsset codexJsonFile;
     
-    [Header("Animation Settings")]
-    [SerializeField] private float slideDuration = 0.3f;
-    [SerializeField] private Ease slideEase = Ease.OutQuad;
+    // Animation Settings
+    private float slideDuration = 0.3f;
+    private Ease slideEase = Ease.OutQuad;
     
     private CodexData codexData;
     private CodexCategory currentCategory;
@@ -35,12 +34,123 @@ public class CodexPanelManager : MonoBehaviour
     private CodexEntry currentEntry;
     private bool isPanelVisible = false;
     private Dictionary<string, bool> subcategoryExpanded = new Dictionary<string, bool>();
+    private CameraMovement panelMovement;
+
+    // Custom category button names
+    private readonly Dictionary<string, CodexCategory> categoryButtonMap = new Dictionary<string, CodexCategory>
+    {
+        { "characters", CodexCategory.Characters },
+        { "history", CodexCategory.History },
+        { "events", CodexCategory.History } // Assuming "events" is a subcategory of History
+    };
     
     private void Start()
     {
+        FindReferences();
         LoadCodexData();
         SetupUI();
         SetupEventListeners();
+    }
+    
+    private void FindReferences()
+    {
+        // Find main panel
+        codexPanel = GetComponent<RectTransform>();
+        if (codexPanel == null)
+        {
+            Debug.LogError("CodexPanelManager must be on a GameObject with RectTransform!");
+            return;
+        }
+
+        // Get camera movement component
+        panelMovement = Camera.main.GetComponent<CameraMovement>();
+        if (panelMovement == null)
+        {
+            Debug.LogError("CameraMovement component not found on Main Camera!");
+        }
+
+        // Find UI elements
+        menuPage = FindChildByName("MenuPage");
+        entryPage = FindChildByName("EntryPage");
+        categoryContainer = FindChildByName("CategoryContainer")?.transform;
+        subcategoryContainer = FindChildByName("SubcategoryContainer")?.transform;
+        toggleButton = FindChildByName("ToggleButton")?.GetComponent<Button>();
+        backButton = FindChildByName("BackButton")?.GetComponent<Button>();
+
+        // Find entry page elements
+        if (entryPage != null)
+        {
+            entryTitleText = FindChildByName("Title")?.GetComponent<TextMeshProUGUI>();
+            entryDescriptionText = FindChildByName("Description")?.GetComponent<TextMeshProUGUI>();
+            entryImage = FindChildByName("Image")?.GetComponent<Image>();
+        }
+
+        // Load JSON file from Resources
+        codexJsonFile = Resources.Load<TextAsset>("CodexData");
+        if (codexJsonFile == null)
+        {
+            Debug.LogError("CodexData.json not found in Resources folder!");
+        }
+
+        // Log any missing components
+        LogMissingComponents();
+    }
+
+    private GameObject FindChildByName(string name)
+    {
+        // First try direct child
+        Transform child = transform.Find(name);
+        if (child != null)
+        {
+            return child.gameObject;
+        }
+
+        // If not found, search recursively
+        foreach (Transform t in transform)
+        {
+            child = FindChildRecursive(t, name);
+            if (child != null)
+            {
+                return child.gameObject;
+            }
+        }
+
+        Debug.LogWarning($"Could not find child '{name}' in {gameObject.name} or its children");
+        return null;
+    }
+
+    private Transform FindChildRecursive(Transform parent, string name)
+    {
+        // Check if this is the child we're looking for
+        if (parent.name == name)
+        {
+            return parent;
+        }
+
+        // Search through all children
+        foreach (Transform child in parent)
+        {
+            Transform result = FindChildRecursive(child, name);
+            if (result != null)
+            {
+                return result;
+            }
+        }
+
+        return null;
+    }
+
+    private void LogMissingComponents()
+    {
+        if (menuPage == null) Debug.LogError("MenuPage not found!");
+        if (entryPage == null) Debug.LogError("EntryPage not found!");
+        if (categoryContainer == null) Debug.LogError("CategoryContainer not found!");
+        if (subcategoryContainer == null) Debug.LogError("SubcategoryContainer not found!");
+        if (toggleButton == null) Debug.LogError("ToggleButton not found!");
+        if (backButton == null) Debug.LogError("BackButton not found!");
+        if (entryTitleText == null) Debug.LogError("EntryTitleText not found!");
+        if (entryDescriptionText == null) Debug.LogError("EntryDescriptionText not found!");
+        if (entryImage == null) Debug.LogError("EntryImage not found!");
     }
     
     private void LoadCodexData()
@@ -51,20 +161,42 @@ public class CodexPanelManager : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Codex JSON file not assigned!");
+            // Create empty codex data if no JSON file is assigned
+            codexData = new CodexData
+            {
+                entries = new List<CodexEntry>()
+            };
+            Debug.LogWarning("No Codex JSON file found. Using empty codex data.");
         }
     }
     
     private void SetupUI()
     {
-        // Set initial position off-screen
-        codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0);
+        // Set initial position in the middle of the screen
+        RectTransform canvasRect = codexPanel.parent as RectTransform;
+        if (canvasRect != null)
+        {
+            codexPanel.anchoredPosition = new Vector2(
+                canvasRect.rect.width - codexPanel.rect.width / 2,
+                canvasRect.rect.height / 2
+            );
+        }
+        else
+        {
+            codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0);
+        }
+
         menuPage.SetActive(true);
         entryPage.SetActive(false);
         
         // Set initial category
         currentCategory = CodexCategory.Characters;
         UpdateCategoryUI();
+
+        // Start with panel hidden but positioned correctly
+        codexPanel.gameObject.SetActive(true);
+        codexPanel.anchoredPosition = new Vector2(codexPanel.anchoredPosition.x + codexPanel.rect.width, codexPanel.anchoredPosition.y);
+        isPanelVisible = false;
     }
     
     private void SetupEventListeners()
@@ -73,42 +205,60 @@ public class CodexPanelManager : MonoBehaviour
         backButton.onClick.AddListener(ShowMenuPage);
         
         // Setup category buttons
-        foreach (CodexCategory category in System.Enum.GetValues(typeof(CodexCategory)))
+        Button[] categoryButtons = categoryContainer.GetComponentsInChildren<Button>();
+        foreach (Button categoryButton in categoryButtons)
         {
-            // Find any button in the categoryContainer
-            Button[] categoryButtons = categoryContainer.GetComponentsInChildren<Button>();
-            foreach (Button categoryButton in categoryButtons)
+            TextMeshProUGUI buttonText = categoryButton.GetComponentInChildren<TextMeshProUGUI>();
+            if (buttonText != null)
             {
-                // Check if the button's text matches the category name
-                TextMeshProUGUI buttonText = categoryButton.GetComponentInChildren<TextMeshProUGUI>();
-                if (buttonText != null && buttonText.text == category.ToString())
+                string buttonName = buttonText.text.ToLower();
+                if (categoryButtonMap.TryGetValue(buttonName, out CodexCategory category))
                 {
-                    categoryButton.onClick.AddListener(() => OnCategorySelected(category));
-                    break;
+                    categoryButton.onClick.AddListener(() => {
+                        Debug.Log($"Category button clicked: {buttonName}");
+                        OnCategorySelected(category);
+                    });
                 }
             }
         }
     }
     
-    private void TogglePanel()
+    public void TogglePanel()
     {
+        Debug.Log("Toggle button clicked");
         isPanelVisible = !isPanelVisible;
         
         if (isPanelVisible)
         {
             codexPanel.gameObject.SetActive(true);
-            codexPanel.DOAnchorPosX(0, slideDuration).SetEase(slideEase);
+            // Animate from off-screen to visible position
+            codexPanel.DOAnchorPosX(codexPanel.anchoredPosition.x - codexPanel.rect.width, slideDuration)
+                .SetEase(slideEase)
+                .OnStart(() => {
+                    if (panelMovement != null)
+                    {
+                        panelMovement.SetEnabled(false); // Disable camera movement when panel is open
+                    }
+                });
         }
         else
         {
-            codexPanel.DOAnchorPosX(codexPanel.rect.width, slideDuration)
+            // Animate to off-screen position
+            codexPanel.DOAnchorPosX(codexPanel.anchoredPosition.x + codexPanel.rect.width, slideDuration)
                 .SetEase(slideEase)
-                .OnComplete(() => codexPanel.gameObject.SetActive(false));
+                .OnComplete(() => {
+                    codexPanel.gameObject.SetActive(false);
+                    if (panelMovement != null)
+                    {
+                        panelMovement.SetEnabled(true); // Re-enable camera movement when panel is closed
+                    }
+                });
         }
     }
     
     private void OnCategorySelected(CodexCategory category)
     {
+        Debug.Log($"Category selected: {category}");
         currentCategory = category;
         UpdateCategoryUI();
     }
@@ -117,11 +267,6 @@ public class CodexPanelManager : MonoBehaviour
     {
         // Clear existing subcategories and entries
         foreach (Transform child in subcategoryContainer)
-        {
-            Destroy(child.gameObject);
-        }
-        
-        foreach (Transform child in entryContainer)
         {
             Destroy(child.gameObject);
         }
@@ -158,14 +303,22 @@ public class CodexPanelManager : MonoBehaviour
         headerText.fontSize = 16;
         headerText.color = Color.white;
         
-        // Create expand/collapse arrow
+        // Create expand/collapse arrow using Image
         GameObject arrowObj = new GameObject("Arrow");
         arrowObj.transform.SetParent(headerObj.transform, false);
         RectTransform arrowRect = arrowObj.AddComponent<RectTransform>();
-        TextMeshProUGUI arrowText = arrowObj.AddComponent<TextMeshProUGUI>();
-        arrowText.text = "▼";
-        arrowText.alignment = TextAlignmentOptions.Right;
-        arrowText.fontSize = 12;
+        Image arrowImage = arrowObj.AddComponent<Image>();
+        
+        // Set arrow image to a simple triangle sprite
+        arrowImage.sprite = CreateTriangleSprite();
+        arrowImage.color = Color.white;
+        
+        // Position the arrow on the right side
+        arrowRect.anchorMin = new Vector2(1, 0.5f);
+        arrowRect.anchorMax = new Vector2(1, 0.5f);
+        arrowRect.pivot = new Vector2(0.5f, 0.5f);
+        arrowRect.sizeDelta = new Vector2(20, 20);
+        arrowRect.anchoredPosition = new Vector2(-10, 0);
         
         // Create entries container
         GameObject entriesObj = new GameObject("Entries");
@@ -180,21 +333,61 @@ public class CodexPanelManager : MonoBehaviour
         layoutElement.minHeight = 30;
         
         // Setup header button click
-        headerButton.onClick.AddListener(() => ToggleSubcategory(subcategory, entriesObj, arrowText));
+        headerButton.onClick.AddListener(() => ToggleSubcategory(subcategory, entriesObj, arrowImage));
         
         // Initialize state
         bool isExpanded = subcategoryExpanded.ContainsKey(subcategory) ? subcategoryExpanded[subcategory] : false;
         entriesObj.SetActive(isExpanded);
-        arrowText.text = isExpanded ? "▼" : "▶";
+        arrowImage.transform.rotation = Quaternion.Euler(0, 0, isExpanded ? 0 : -90);
         
         return subcategoryObj;
     }
-    
-    private void ToggleSubcategory(string subcategory, GameObject entriesObj, TextMeshProUGUI arrowText)
+
+    private Sprite CreateTriangleSprite()
+    {
+        // Create a simple triangle texture
+        Texture2D texture = new Texture2D(32, 32);
+        Color[] colors = new Color[32 * 32];
+        
+        for (int y = 0; y < 32; y++)
+        {
+            for (int x = 0; x < 32; x++)
+            {
+                // Create a simple triangle shape
+                float centerX = 16;
+                float centerY = 16;
+                float radius = 12;
+                
+                // Calculate distance from center
+                float dx = x - centerX;
+                float dy = y - centerY;
+                float distance = Mathf.Sqrt(dx * dx + dy * dy);
+                
+                // Create a triangle shape
+                if (distance < radius && 
+                    Mathf.Abs(dx) < radius * 0.8f && 
+                    dy > -radius * 0.5f)
+                {
+                    colors[y * 32 + x] = Color.white;
+                }
+                else
+                {
+                    colors[y * 32 + x] = Color.clear;
+                }
+            }
+        }
+        
+        texture.SetPixels(colors);
+        texture.Apply();
+        
+        return Sprite.Create(texture, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f));
+    }
+
+    private void ToggleSubcategory(string subcategory, GameObject entriesObj, Image arrowImage)
     {
         bool isExpanded = !entriesObj.activeSelf;
         entriesObj.SetActive(isExpanded);
-        arrowText.text = isExpanded ? "▼" : "▶";
+        arrowImage.transform.rotation = Quaternion.Euler(0, 0, isExpanded ? 0 : -90);
         subcategoryExpanded[subcategory] = isExpanded;
         
         if (isExpanded)
@@ -240,6 +433,7 @@ public class CodexPanelManager : MonoBehaviour
     
     private void ShowEntry(CodexEntry entry)
     {
+        Debug.Log($"Showing entry: {entry.title}");
         currentEntry = entry;
         entryTitleText.text = entry.title;
         entryDescriptionText.text = entry.description;
@@ -274,6 +468,7 @@ public class CodexPanelManager : MonoBehaviour
     
     private void ShowMenuPage()
     {
+        Debug.Log("Back button clicked - showing menu page");
         entryPage.SetActive(false);
         menuPage.SetActive(true);
     }
