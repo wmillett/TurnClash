@@ -177,13 +177,24 @@ public class CodexPanelManager : MonoBehaviour
         float screenHeight = Screen.height;
         
         // Set the panel's size (adjust these values as needed)
-        codexPanel.sizeDelta = new Vector2(400, screenHeight * 0.8f);
+        codexPanel.sizeDelta = new Vector2(screenWidth * 0.3f, screenHeight * 0.8f);
         
-        // Position the panel off-screen to the right
+        // Position the panel on the right side of the screen
         codexPanel.anchorMin = new Vector2(1, 0.5f);
         codexPanel.anchorMax = new Vector2(1, 0.5f);
         codexPanel.pivot = new Vector2(1, 0.5f);
-        codexPanel.anchoredPosition = new Vector2(0, 0); // This will position it at the right edge of the screen
+        codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0); // Start fully off-screen
+
+        // Ensure toggle button is always visible and positioned correctly
+        if (toggleButton != null)
+        {
+            RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
+            toggleRect.SetParent(codexPanel.parent); // Start at canvas level
+            toggleRect.anchorMin = new Vector2(1, 0.5f); // Anchor to right side
+            toggleRect.anchorMax = new Vector2(1, 0.5f);
+            toggleRect.pivot = new Vector2(0.5f, 0.5f);
+            toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0); // Position at screen edge
+        }
 
         menuPage.SetActive(true);
         entryPage.SetActive(false);
@@ -229,26 +240,49 @@ public class CodexPanelManager : MonoBehaviour
         if (isPanelVisible)
         {
             codexPanel.gameObject.SetActive(true);
-            // Animate from off-screen to visible position
-            codexPanel.DOAnchorPosX(-codexPanel.rect.width, slideDuration)
+            
+            // Ensure toggle button is a child of the panel
+            if (toggleButton != null)
+            {
+                RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
+                toggleRect.SetParent(codexPanel);
+                toggleRect.anchorMin = new Vector2(0, 0.5f);
+                toggleRect.anchorMax = new Vector2(0, 0.5f);
+                toggleRect.pivot = new Vector2(0.5f, 0.5f);
+                toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0);
+            }
+
+            // Animate panel sliding in
+            codexPanel.DOAnchorPosX(0, slideDuration)
                 .SetEase(slideEase)
                 .OnStart(() => {
                     if (panelMovement != null)
                     {
-                        panelMovement.SetEnabled(false); // Disable camera movement when panel is open
+                        panelMovement.SetEnabled(false);
                     }
                 });
         }
         else
         {
-            // Animate to off-screen position
-            codexPanel.DOAnchorPosX(0, slideDuration)
+            // Animate panel sliding out
+            codexPanel.DOAnchorPosX(codexPanel.rect.width, slideDuration)
                 .SetEase(slideEase)
                 .OnComplete(() => {
+                    // Move toggle button back to canvas level after animation
+                    if (toggleButton != null)
+                    {
+                        RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
+                        toggleRect.SetParent(codexPanel.parent);
+                        toggleRect.anchorMin = new Vector2(1, 0.5f);
+                        toggleRect.anchorMax = new Vector2(1, 0.5f);
+                        toggleRect.pivot = new Vector2(0.5f, 0.5f);
+                        toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0);
+                    }
+                    
                     codexPanel.gameObject.SetActive(false);
                     if (panelMovement != null)
                     {
-                        panelMovement.SetEnabled(true); // Re-enable camera movement when panel is closed
+                        panelMovement.SetEnabled(true);
                     }
                 });
         }
