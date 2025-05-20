@@ -44,6 +44,12 @@ public class CodexPanelManager : MonoBehaviour
         { "events", CodexCategory.History } // Assuming "events" is a subcategory of History
     };
     
+    // Category Buttons (assigned in Inspector)
+    [SerializeField] private Button charactersButton;
+    [SerializeField] private Button historyButton;
+    [SerializeField] private Button locationsButton;
+    [SerializeField] private Button organizationsButton;
+    
     private void Start()
     {
         FindReferences();
@@ -171,122 +177,121 @@ public class CodexPanelManager : MonoBehaviour
     }
     
     private void SetupUI()
+{
+    // Set initial position using screen coordinates
+    float screenWidth = Screen.width;
+    float screenHeight = Screen.height;
+
+    // Set the panel's size (adjust these values as needed)
+    codexPanel.sizeDelta = new Vector2(screenWidth * 0.85f, screenHeight * 0.8f);
+
+    // Position the panel on the right side of the screen
+    codexPanel.anchorMin = new Vector2(1, 0.5f);
+    codexPanel.anchorMax = new Vector2(1, 0.5f);
+    codexPanel.pivot = new Vector2(1, 0.5f);
+    codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0); // Start fully off-screen
+
+    // Ensure toggle button is always visible and positioned correctly
+    if (toggleButton != null)
     {
-        // Set initial position using screen coordinates
-        float screenWidth = Screen.width;
-        float screenHeight = Screen.height;
-        
-        // Set the panel's size (adjust these values as needed)
-        codexPanel.sizeDelta = new Vector2(screenWidth * 0.3f, screenHeight * 0.8f);
-        
-        // Position the panel on the right side of the screen
-        codexPanel.anchorMin = new Vector2(1, 0.5f);
-        codexPanel.anchorMax = new Vector2(1, 0.5f);
-        codexPanel.pivot = new Vector2(1, 0.5f);
-        codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0); // Start fully off-screen
-
-        // Ensure toggle button is always visible and positioned correctly
-        if (toggleButton != null)
-        {
-            RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
-            toggleRect.SetParent(codexPanel.parent); // Start at canvas level
-            toggleRect.anchorMin = new Vector2(1, 0.5f); // Anchor to right side
-            toggleRect.anchorMax = new Vector2(1, 0.5f);
-            toggleRect.pivot = new Vector2(0.5f, 0.5f);
-            toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0); // Position at screen edge
-        }
-
-        menuPage.SetActive(true);
-        entryPage.SetActive(false);
-        
-        // Set initial category
-        currentCategory = CodexCategory.Characters;
-        UpdateCategoryUI();
-
-        // Start with panel hidden
-        codexPanel.gameObject.SetActive(true);
-        isPanelVisible = false;
+        RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
+        toggleRect.SetParent(codexPanel.parent); // Start at canvas level
+        toggleRect.anchorMin = new Vector2(1, 0.5f); // Anchor to right side
+        toggleRect.anchorMax = new Vector2(1, 0.5f);
+        toggleRect.pivot = new Vector2(0.5f, 0.5f);
+        toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0); // Position at screen edge
     }
+
+    menuPage.SetActive(true);
+    entryPage.SetActive(false);
+
+    // Set initial category
+    currentCategory = CodexCategory.Characters;
+    UpdateCategoryUI();
+
+    // Start with panel hidden
+    codexPanel.gameObject.SetActive(true);
+    isPanelVisible = false;
+}
+
     
     private void SetupEventListeners()
     {
         toggleButton.onClick.AddListener(TogglePanel);
         backButton.onClick.AddListener(ShowMenuPage);
         
-        // Setup category buttons
-        Button[] categoryButtons = categoryContainer.GetComponentsInChildren<Button>();
-        foreach (Button categoryButton in categoryButtons)
-        {
-            TextMeshProUGUI buttonText = categoryButton.GetComponentInChildren<TextMeshProUGUI>();
-            if (buttonText != null)
-            {
-                string buttonName = buttonText.text.ToLower();
-                if (categoryButtonMap.TryGetValue(buttonName, out CodexCategory category))
-                {
-                    categoryButton.onClick.AddListener(() => {
-                        Debug.Log($"Category button clicked: {buttonName}");
-                        OnCategorySelected(category);
-                    });
-                }
-            }
-        }
+        // Wire up real category buttons
+        if (charactersButton != null)
+            charactersButton.onClick.AddListener(() => OnCategorySelected(CodexCategory.Characters));
+        if (historyButton != null)
+            historyButton.onClick.AddListener(() => OnCategorySelected(CodexCategory.History));
+        if (locationsButton != null)
+            locationsButton.onClick.AddListener(() => OnCategorySelected(CodexCategory.Locations));
+        if (organizationsButton != null)
+            organizationsButton.onClick.AddListener(() => OnCategorySelected(CodexCategory.Organizations));
     }
     
     public void TogglePanel()
-    {
-        Debug.Log("Toggle button clicked");
-        isPanelVisible = !isPanelVisible;
-        
-        if (isPanelVisible)
-        {
-            codexPanel.gameObject.SetActive(true);
-            
-            // Ensure toggle button is a child of the panel
-            if (toggleButton != null)
-            {
-                RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
-                toggleRect.SetParent(codexPanel);
-                toggleRect.anchorMin = new Vector2(0, 0.5f);
-                toggleRect.anchorMax = new Vector2(0, 0.5f);
-                toggleRect.pivot = new Vector2(0.5f, 0.5f);
-                toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0);
-            }
+{
+    Debug.Log("Toggle button clicked");
+    isPanelVisible = !isPanelVisible;
 
-            // Animate panel sliding in
-            codexPanel.DOAnchorPosX(0, slideDuration)
-                .SetEase(slideEase)
-                .OnStart(() => {
-                    if (panelMovement != null)
-                    {
-                        panelMovement.SetEnabled(false);
-                    }
-                });
-        }
-        else
+    if (isPanelVisible)
+    {
+        codexPanel.gameObject.SetActive(true);
+
+        // Ensure correct size before showing
+        float screenWidth = Screen.width;
+        float screenHeight = Screen.height;
+        codexPanel.sizeDelta = new Vector2(screenWidth * 0.85f, screenHeight * 0.8f);
+
+        // Ensure toggle button is a child of the panel
+        if (toggleButton != null)
         {
-            // Animate panel sliding out
-            codexPanel.DOAnchorPosX(codexPanel.rect.width, slideDuration)
-                .SetEase(slideEase)
-                .OnComplete(() => {
-                    // Move toggle button back to canvas level after animation
-                    if (toggleButton != null)
-                    {
-                        RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
-                        toggleRect.SetParent(codexPanel.parent);
-                        toggleRect.anchorMin = new Vector2(1, 0.5f);
-                        toggleRect.anchorMax = new Vector2(1, 0.5f);
-                        toggleRect.pivot = new Vector2(0.5f, 0.5f);
-                        toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0);
-                    }
-                    
-                    codexPanel.gameObject.SetActive(false);
-                    if (panelMovement != null)
-                    {
-                        panelMovement.SetEnabled(true);
-                    }
-                });
+            RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
+            toggleRect.SetParent(codexPanel);
+            toggleRect.anchorMin = new Vector2(0, 0.5f);
+            toggleRect.anchorMax = new Vector2(0, 0.5f);
+            toggleRect.pivot = new Vector2(0.5f, 0.5f);
+            toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0);
         }
+
+        // Animate panel sliding in
+        codexPanel.DOAnchorPosX(0, slideDuration)
+            .SetEase(slideEase)
+            .OnStart(() => {
+                if (panelMovement != null)
+                {
+                    panelMovement.SetEnabled(false);
+                }
+            });
     }
+    else
+    {
+        // Animate panel sliding out
+        codexPanel.DOAnchorPosX(codexPanel.rect.width, slideDuration)
+            .SetEase(slideEase)
+            .OnComplete(() => {
+                // Move toggle button back to canvas level after animation
+                if (toggleButton != null)
+                {
+                    RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
+                    toggleRect.SetParent(codexPanel.parent);
+                    toggleRect.anchorMin = new Vector2(1, 0.5f);
+                    toggleRect.anchorMax = new Vector2(1, 0.5f);
+                    toggleRect.pivot = new Vector2(0.5f, 0.5f);
+                    toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0);
+                }
+
+                codexPanel.gameObject.SetActive(false);
+                if (panelMovement != null)
+                {
+                    panelMovement.SetEnabled(true);
+                }
+            });
+    }
+}
+
     
     private void OnCategorySelected(CodexCategory category)
     {
