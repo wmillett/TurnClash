@@ -177,43 +177,67 @@ public class CodexPanelManager : MonoBehaviour
     }
     
     private void SetupUI()
-{
-    // Set initial position using screen coordinates
-    float screenWidth = Screen.width;
-    float screenHeight = Screen.height;
-
-    // Set the panel's size (adjust these values as needed)
-    codexPanel.sizeDelta = new Vector2(screenWidth * 0.85f, screenHeight * 0.8f);
-
-    // Position the panel on the right side of the screen
-    codexPanel.anchorMin = new Vector2(1, 0.5f);
-    codexPanel.anchorMax = new Vector2(1, 0.5f);
-    codexPanel.pivot = new Vector2(1, 0.5f);
-    codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0); // Start fully off-screen
-
-    // Ensure toggle button is always visible and positioned correctly
-    if (toggleButton != null)
     {
-        RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
-        toggleRect.SetParent(codexPanel.parent); // Start at canvas level
-        toggleRect.anchorMin = new Vector2(1, 0.5f); // Anchor to right side
-        toggleRect.anchorMax = new Vector2(1, 0.5f);
-        toggleRect.pivot = new Vector2(0.5f, 0.5f);
-        toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0); // Position at screen edge
+        // Set initial position using screen coordinates
+        float screenWidth = Screen.width;
+        float screenHeight = Screen.height;
+        float aspectRatio = screenWidth / screenHeight;
+
+        // Use consistent 60% width regardless of aspect ratio
+        float widthPercent = 0.6f;
+        float heightPercent = 0.8f;
+
+        // Set the panel's size to a moderate size adjusted for aspect ratio
+        codexPanel.sizeDelta = new Vector2(screenWidth * widthPercent, screenHeight * heightPercent);
+
+        // Force the scale to be exactly 1 to prevent scaling issues
+        codexPanel.localScale = Vector3.one;
+
+        // Position the panel on the right side of the screen
+        codexPanel.anchorMin = new Vector2(1, 0.5f);
+        codexPanel.anchorMax = new Vector2(1, 0.5f);
+        codexPanel.pivot = new Vector2(1, 0.5f);
+        codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0); // Start fully off-screen
+
+        // Setup CategoryContainer
+        if (categoryContainer != null)
+        {
+            RectTransform categoryRect = categoryContainer.GetComponent<RectTransform>();
+            if (categoryRect != null)
+            {
+                // Reset scale to prevent size issues
+                categoryRect.localScale = Vector3.one;
+                
+                // Set proper anchoring and size
+                categoryRect.anchorMin = new Vector2(0, 1);  // Anchor to top-left
+                categoryRect.anchorMax = new Vector2(1, 1);  // Anchor to top-right
+                categoryRect.pivot = new Vector2(0.5f, 1);   // Pivot at top-center
+                
+                // Position it with a small margin from the top
+                categoryRect.anchoredPosition = new Vector2(0, -20);
+                
+                // Set the fixed height and make it stretch horizontally
+                categoryRect.sizeDelta = new Vector2(0, 50); 
+            }
+        }
+
+        // Ensure toggle button is always visible and positioned correctly
+        if (toggleButton != null)
+        {
+            resetButtonPosition();
+        }
+
+        menuPage.SetActive(true);
+        entryPage.SetActive(false);
+
+        // Set initial category
+        currentCategory = CodexCategory.Characters;
+        UpdateCategoryUI();
+
+        // Start with panel hidden
+        codexPanel.gameObject.SetActive(true);
+        isPanelVisible = false;
     }
-
-    menuPage.SetActive(true);
-    entryPage.SetActive(false);
-
-    // Set initial category
-    currentCategory = CodexCategory.Characters;
-    UpdateCategoryUI();
-
-    // Start with panel hidden
-    codexPanel.gameObject.SetActive(true);
-    isPanelVisible = false;
-}
-
     
     private void SetupEventListeners()
     {
@@ -231,67 +255,102 @@ public class CodexPanelManager : MonoBehaviour
             organizationsButton.onClick.AddListener(() => OnCategorySelected(CodexCategory.Organizations));
     }
     
+
+    private void setButtonSize()
+    {
+        RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
+        toggleRect.SetParent(codexPanel);
+        
+        // Anchor to the left edge but slightly inset
+        toggleRect.anchorMin = new Vector2(0, 0.5f);
+        toggleRect.anchorMax = new Vector2(0, 0.5f);
+        toggleRect.pivot = new Vector2(1, 0.5f); // Change pivot to right side of button
+        
+        // Position the button so it's partially overlapping the left edge of the panel
+        toggleRect.anchoredPosition = new Vector2(5, 0); // Positive X means inward from left edge
+        
+        // Make the button smaller (adjust size as needed)
+        toggleRect.sizeDelta = new Vector2(30, 30);
+    }
+    
+    private void resetButtonPosition()
+    {
+        RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
+        toggleRect.SetParent(codexPanel.parent);
+        toggleRect.anchorMin = new Vector2(1, 0.5f);
+        toggleRect.anchorMax = new Vector2(1, 0.5f);
+        toggleRect.pivot = new Vector2(0.5f, 0.5f);
+        toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0);
+        
+        // Restore original button size if needed
+        toggleRect.sizeDelta = new Vector2(30, 30);
+    }
+    
     public void TogglePanel()
-{
-    Debug.Log("Toggle button clicked");
-    isPanelVisible = !isPanelVisible;
-
-    if (isPanelVisible)
     {
-        codexPanel.gameObject.SetActive(true);
+        Debug.Log("Toggle button clicked");
+        isPanelVisible = !isPanelVisible;
 
-        // Ensure correct size before showing
-        float screenWidth = Screen.width;
-        float screenHeight = Screen.height;
-        codexPanel.sizeDelta = new Vector2(screenWidth * 0.85f, screenHeight * 0.8f);
-
-        // Ensure toggle button is a child of the panel
-        if (toggleButton != null)
+        if (isPanelVisible)
         {
-            RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
-            toggleRect.SetParent(codexPanel);
-            toggleRect.anchorMin = new Vector2(0, 0.5f);
-            toggleRect.anchorMax = new Vector2(0, 0.5f);
-            toggleRect.pivot = new Vector2(0.5f, 0.5f);
-            toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0);
+            codexPanel.gameObject.SetActive(true);
+
+            // Force scale to be exactly 1
+            codexPanel.localScale = Vector3.one;
+
+            // Get screen dimensions and aspect ratio
+            float screenWidth = Screen.width;
+            float screenHeight = Screen.height;
+            float aspectRatio = screenWidth / screenHeight;
+
+            // Use consistent 60% width regardless of aspect ratio
+            float widthPercent = 0.6f;
+            float heightPercent = 0.8f;
+
+            // Set size with aspect ratio adjustment
+            codexPanel.sizeDelta = new Vector2(screenWidth * widthPercent, screenHeight * heightPercent);
+
+            // Ensure toggle button is a child of the panel
+            if (toggleButton != null)
+            {
+                setButtonSize();
+            }
+
+            // Log panel size for debugging
+            Debug.Log($"Screen size: {screenWidth} x {screenHeight}, Aspect ratio: {aspectRatio}");
+            Debug.Log($"Panel size: {codexPanel.rect.width} x {codexPanel.rect.height}");
+            Debug.Log($"Panel local scale: {codexPanel.localScale}");
+
+            // Animate panel sliding in
+            codexPanel.DOAnchorPosX(0, slideDuration)
+                .SetEase(slideEase)
+                .OnStart(() => {
+                    if (panelMovement != null)
+                    {
+                        panelMovement.SetEnabled(false);
+                    }
+                });
         }
+        else
+        {
+            // Animate panel sliding out
+            codexPanel.DOAnchorPosX(codexPanel.rect.width, slideDuration)
+                .SetEase(slideEase)
+                .OnComplete(() => {
+                    // Move toggle button back to canvas level after animation
+                    if (toggleButton != null)
+                    {
+                        resetButtonPosition();
+                    }
 
-        // Animate panel sliding in
-        codexPanel.DOAnchorPosX(0, slideDuration)
-            .SetEase(slideEase)
-            .OnStart(() => {
-                if (panelMovement != null)
-                {
-                    panelMovement.SetEnabled(false);
-                }
-            });
+                    codexPanel.gameObject.SetActive(false);
+                    if (panelMovement != null)
+                    {
+                        panelMovement.SetEnabled(true);
+                    }
+                });
+        }
     }
-    else
-    {
-        // Animate panel sliding out
-        codexPanel.DOAnchorPosX(codexPanel.rect.width, slideDuration)
-            .SetEase(slideEase)
-            .OnComplete(() => {
-                // Move toggle button back to canvas level after animation
-                if (toggleButton != null)
-                {
-                    RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
-                    toggleRect.SetParent(codexPanel.parent);
-                    toggleRect.anchorMin = new Vector2(1, 0.5f);
-                    toggleRect.anchorMax = new Vector2(1, 0.5f);
-                    toggleRect.pivot = new Vector2(0.5f, 0.5f);
-                    toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0);
-                }
-
-                codexPanel.gameObject.SetActive(false);
-                if (panelMovement != null)
-                {
-                    panelMovement.SetEnabled(true);
-                }
-            });
-    }
-}
-
     
     private void OnCategorySelected(CodexCategory category)
     {
@@ -315,110 +374,110 @@ public class CodexPanelManager : MonoBehaviour
             .Distinct();
             
         // Create subcategory buttons
-        foreach (string subcategory in subcategories)
-        {
-            GameObject subcategoryObj = CreateSubcategoryObject(subcategory);
-            subcategoryObj.transform.SetParent(subcategoryContainer, false);
-        }
+        // foreach (string subcategory in subcategories)
+        // {
+        //     GameObject subcategoryObj = CreateSubcategoryObject(subcategory);
+        //     subcategoryObj.transform.SetParent(subcategoryContainer, false);
+        // }
     }
     
-    private GameObject CreateSubcategoryObject(string subcategory)
-    {
-        GameObject subcategoryObj = new GameObject(subcategory);
-        RectTransform rectTransform = subcategoryObj.AddComponent<RectTransform>();
+    // private GameObject CreateSubcategoryObject(string subcategory)
+    // {
+    //     GameObject subcategoryObj = new GameObject(subcategory);
+    //     RectTransform rectTransform = subcategoryObj.AddComponent<RectTransform>();
         
-        // Create header button
-        GameObject headerObj = new GameObject("Header");
-        headerObj.transform.SetParent(subcategoryObj.transform, false);
-        RectTransform headerRect = headerObj.AddComponent<RectTransform>();
-        Button headerButton = headerObj.AddComponent<Button>();
-        TextMeshProUGUI headerText = headerObj.AddComponent<TextMeshProUGUI>();
+    //     // Create header button
+    //     GameObject headerObj = new GameObject("Header");
+    //     headerObj.transform.SetParent(subcategoryObj.transform, false);
+    //     RectTransform headerRect = headerObj.AddComponent<RectTransform>();
+    //     Button headerButton = headerObj.AddComponent<Button>();
+    //     TextMeshProUGUI headerText = headerObj.AddComponent<TextMeshProUGUI>();
         
-        // Setup header
-        headerText.text = subcategory;
-        headerText.alignment = TextAlignmentOptions.Left;
-        headerText.fontSize = 16;
-        headerText.color = Color.white;
+    //     // Setup header
+    //     headerText.text = subcategory;
+    //     headerText.alignment = TextAlignmentOptions.Left;
+    //     headerText.fontSize = 16;
+    //     headerText.color = Color.white;
         
-        // Create expand/collapse arrow using Image
-        GameObject arrowObj = new GameObject("Arrow");
-        arrowObj.transform.SetParent(headerObj.transform, false);
-        RectTransform arrowRect = arrowObj.AddComponent<RectTransform>();
-        Image arrowImage = arrowObj.AddComponent<Image>();
+    //     // Create expand/collapse arrow using Image
+    //     GameObject arrowObj = new GameObject("Arrow");
+    //     arrowObj.transform.SetParent(headerObj.transform, false);
+    //     RectTransform arrowRect = arrowObj.AddComponent<RectTransform>();
+    //     Image arrowImage = arrowObj.AddComponent<Image>();
         
-        // Set arrow image to a simple triangle sprite
-        arrowImage.sprite = CreateTriangleSprite();
-        arrowImage.color = Color.white;
+    //     // Set arrow image to a simple triangle sprite
+    //     arrowImage.sprite = CreateTriangleSprite();
+    //     arrowImage.color = Color.white;
         
-        // Position the arrow on the right side
-        arrowRect.anchorMin = new Vector2(1, 0.5f);
-        arrowRect.anchorMax = new Vector2(1, 0.5f);
-        arrowRect.pivot = new Vector2(0.5f, 0.5f);
-        arrowRect.sizeDelta = new Vector2(20, 20);
-        arrowRect.anchoredPosition = new Vector2(-10, 0);
+    //     // Position the arrow on the right side
+    //     arrowRect.anchorMin = new Vector2(1, 0.5f);
+    //     arrowRect.anchorMax = new Vector2(1, 0.5f);
+    //     arrowRect.pivot = new Vector2(0.5f, 0.5f);
+    //     arrowRect.sizeDelta = new Vector2(20, 20);
+    //     arrowRect.anchoredPosition = new Vector2(-10, 0);
         
-        // Create entries container
-        GameObject entriesObj = new GameObject("Entries");
-        entriesObj.transform.SetParent(subcategoryObj.transform, false);
-        RectTransform entriesRect = entriesObj.AddComponent<RectTransform>();
-        VerticalLayoutGroup entriesLayout = entriesObj.AddComponent<VerticalLayoutGroup>();
-        entriesLayout.spacing = 5;
-        entriesLayout.padding = new RectOffset(20, 0, 0, 0);
+    //     // Create entries container
+    //     GameObject entriesObj = new GameObject("Entries");
+    //     entriesObj.transform.SetParent(subcategoryObj.transform, false);
+    //     RectTransform entriesRect = entriesObj.AddComponent<RectTransform>();
+    //     VerticalLayoutGroup entriesLayout = entriesObj.AddComponent<VerticalLayoutGroup>();
+    //     entriesLayout.spacing = 5;
+    //     entriesLayout.padding = new RectOffset(20, 0, 0, 0);
         
-        // Setup layout
-        LayoutElement layoutElement = subcategoryObj.AddComponent<LayoutElement>();
-        layoutElement.minHeight = 30;
+    //     // Setup layout
+    //     LayoutElement layoutElement = subcategoryObj.AddComponent<LayoutElement>();
+    //     layoutElement.minHeight = 30;
         
-        // Setup header button click
-        headerButton.onClick.AddListener(() => ToggleSubcategory(subcategory, entriesObj, arrowImage));
+    //     // Setup header button click
+    //     headerButton.onClick.AddListener(() => ToggleSubcategory(subcategory, entriesObj, arrowImage));
         
-        // Initialize state
-        bool isExpanded = subcategoryExpanded.ContainsKey(subcategory) ? subcategoryExpanded[subcategory] : false;
-        entriesObj.SetActive(isExpanded);
-        arrowImage.transform.rotation = Quaternion.Euler(0, 0, isExpanded ? 0 : -90);
+    //     // Initialize state
+    //     bool isExpanded = subcategoryExpanded.ContainsKey(subcategory) ? subcategoryExpanded[subcategory] : false;
+    //     entriesObj.SetActive(isExpanded);
+    //     arrowImage.transform.rotation = Quaternion.Euler(0, 0, isExpanded ? 0 : -90);
         
-        return subcategoryObj;
-    }
+    //     return subcategoryObj;
+    // }
 
-    private Sprite CreateTriangleSprite()
-    {
-        // Create a simple triangle texture
-        Texture2D texture = new Texture2D(32, 32);
-        Color[] colors = new Color[32 * 32];
+    // private Sprite CreateTriangleSprite()
+    // {
+    //     // Create a simple triangle texture
+    //     Texture2D texture = new Texture2D(32, 32);
+    //     Color[] colors = new Color[32 * 32];
         
-        for (int y = 0; y < 32; y++)
-        {
-            for (int x = 0; x < 32; x++)
-            {
-                // Create a simple triangle shape
-                float centerX = 16;
-                float centerY = 16;
-                float radius = 12;
+    //     for (int y = 0; y < 32; y++)
+    //     {
+    //         for (int x = 0; x < 32; x++)
+    //         {
+    //             // Create a simple triangle shape
+    //             float centerX = 16;
+    //             float centerY = 16;
+    //             float radius = 12;
                 
-                // Calculate distance from center
-                float dx = x - centerX;
-                float dy = y - centerY;
-                float distance = Mathf.Sqrt(dx * dx + dy * dy);
+    //             // Calculate distance from center
+    //             float dx = x - centerX;
+    //             float dy = y - centerY;
+    //             float distance = Mathf.Sqrt(dx * dx + dy * dy);
                 
-                // Create a triangle shape
-                if (distance < radius && 
-                    Mathf.Abs(dx) < radius * 0.8f && 
-                    dy > -radius * 0.5f)
-                {
-                    colors[y * 32 + x] = Color.white;
-                }
-                else
-                {
-                    colors[y * 32 + x] = Color.clear;
-                }
-            }
-        }
+    //             // Create a triangle shape
+    //             if (distance < radius && 
+    //                 Mathf.Abs(dx) < radius * 0.8f && 
+    //                 dy > -radius * 0.5f)
+    //             {
+    //                 colors[y * 32 + x] = Color.white;
+    //             }
+    //             else
+    //             {
+    //                 colors[y * 32 + x] = Color.clear;
+    //             }
+    //         }
+    //     }
         
-        texture.SetPixels(colors);
-        texture.Apply();
+    //     texture.SetPixels(colors);
+    //     texture.Apply();
         
-        return Sprite.Create(texture, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f));
-    }
+    //     return Sprite.Create(texture, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f));
+    // }
 
     private void ToggleSubcategory(string subcategory, GameObject entriesObj, Image arrowImage)
     {
