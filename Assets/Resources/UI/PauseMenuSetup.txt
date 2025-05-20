@@ -1,0 +1,117 @@
+Pause Menu Setup Instructions
+==========================
+
+Follow these steps to set up the pause menu UI in your project:
+
+1. Create the UI Hierarchy:
+   
+   - Right-click in the Hierarchy window and select UI → Canvas
+   - Right-click on the Canvas and select UI → Panel
+   - Rename the Panel to "PauseMenuPanel"
+   - Set the Panel's color to a semi-transparent black (RGBA: 0, 0, 0, 0.8)
+
+2. Create the Main Pause Menu:
+
+   - Right-click on PauseMenuPanel and select UI → Panel
+   - Rename it to "MainPanel"
+   - Add a Vertical Layout Group component to MainPanel
+   - Set Spacing to 10, Padding to 20 on all sides
+   - Set Child Alignment to Middle Center
+
+3. Create Text Header:
+
+   - Right-click on MainPanel and select UI → Text - TextMeshPro
+   - Rename to "TitleText"
+   - Set text to "PAUSED"
+   - Set font size to 48
+   - Set font style to Bold
+   - Set text alignment to Center
+   - Set text color to white
+
+4. Create Buttons:
+
+   Add these buttons under MainPanel:
+   
+   a. Resume Button:
+      - Right-click on MainPanel → UI → Button - TextMeshPro
+      - Rename to "ResumeButton"
+      - Set Label text to "RESUME GAME"
+      - Set preferred width to 200, height to 50
+   
+   b. Options Button:
+      - Create another button named "OptionsButton"
+      - Set Label text to "OPTIONS"
+      - Set preferred width to 200, height to 50
+   
+   c. Main Menu Button:
+      - Create another button named "MainMenuButton"
+      - Set Label text to "MAIN MENU"
+      - Set preferred width to 200, height to 50
+   
+   d. Quit Button:
+      - Create another button named "QuitButton"
+      - Set Label text to "QUIT GAME"
+      - Set preferred width to 200, height to 50
+      - Set button color to a dark red tone
+
+5. Create Options Panel:
+
+   - Right-click on PauseMenuPanel and select UI → Panel
+   - Rename to "OptionsPanel"
+   - Position it to cover the same area as MainPanel
+   - Add a Vertical Layout Group component
+
+6. Add Options Title:
+
+   - Add a TextMeshPro Text named "OptionsTitle"
+   - Set text to "OPTIONS"
+   - Set font size to 36, bold style
+   - Set alignment to Center
+
+7. Create Volume Sliders:
+
+   a. Music Volume:
+      - Right-click on OptionsPanel → UI → Slider
+      - Rename to "MusicVolumeSlider"
+      - Add a TextMeshPro Text as a label above it with text "Music Volume"
+      - Set min value to 0, max value to 1
+      - Set default value to 0.75
+
+   b. SFX Volume:
+      - Create another slider named "SFXVolumeSlider"
+      - Add a TextMeshPro Text label with text "SFX Volume"
+      - Configure like the music slider
+
+8. Add Back Button:
+
+   - Add a Button - TextMeshPro named "BackButton"
+   - Set Label text to "BACK"
+   - Position at the bottom of OptionsPanel
+
+9. Set Up the PauseMenuManager:
+
+   - Add the PauseMenuManager script to the Canvas
+   - Assign the references in the Inspector:
+     * Pause Menu Panel = PauseMenuPanel
+     * Resume Button = ResumeButton
+     * Options Button = OptionsButton
+     * Main Menu Button = MainMenuButton
+     * Quit Button = QuitButton
+     * Options Panel = OptionsPanel
+     * Music Volume Slider = MusicVolumeSlider
+     * SFX Volume Slider = SFXVolumeSlider
+     * Back Button = BackButton
+
+10. Final Adjustments:
+
+    - Make sure PauseMenuPanel is inactive by default
+    - Set the Canvas's Render Mode to "Screen Space - Overlay"
+    - Set the Canvas Scaler UI Scale Mode to "Scale With Screen Size"
+    - Reference resolution: 1920 x 1080
+    - Match Width or Height: 0.5 (to balance both)
+
+Styling Tips:
+- Use consistent button colors (except for the Quit button which can be highlighted)
+- Use a simple, readable font for all text
+- Add visual feedback for button hover and pressed states
+- Consider adding subtle animations for panel transitions 

@@ -1,60 +1,116 @@
 {
     "entries": [
         {
-            "id": "char_cabinet_1",
-            "title": "Lileas Graf",
-            "description": "A prominent political figure known for her strategic mind and unwavering determination. She has served in various cabinet positions throughout her career.",
-            "imagePath": "Characters/Cabinet/lileas_graf",
+            "id": "char-001",
+            "title": "Queen Amara",
+            "description": "Queen Amara is the ruler of the Eastern Kingdom. Known for her wisdom and strategic military mind, she has defended her realm from numerous invasions. Her story begins in the small village of Greenfield, where she was born to humble farmers. After saving her village from bandits at the age of 16, she caught the attention of the previous monarch, who took her in as a protégé. She ascended to the throne after proving herself in the Battle of Red Valley.\n\nQueen Amara wears a distinctive blue and gold crown, symbolizing the sky and the sun, signifying her divine right to rule according to Eastern Kingdom traditions.",
+            "imagePath": "Characters/queen_amara",
             "category": "Characters",
-            "subcategory": "Cabinet"
+            "subcategory": "Royalty"
         },
         {
-            "id": "char_world_1",
-            "title": "President Rayne",
-            "description": "The current president of the nation, known for his progressive policies and diplomatic approach to international relations.",
-            "imagePath": "Characters/WorldLeaders/president_rayne",
+            "id": "char-002",
+            "title": "Lord Darius",
+            "description": "Lord Darius is the commander of the Royal Guard and the Queen's most trusted advisor. He is known for his unwavering loyalty and combat prowess. Darius comes from a long line of warriors who have served the crown for generations. His signature weapon is a great sword passed down through his family, said to be forged from a fallen star.",
+            "imagePath": "Characters/lord_darius",
             "category": "Characters",
-            "subcategory": "World Leaders"
+            "subcategory": "Military"
         },
         {
-            "id": "loc_city_1",
-            "title": "Holsord",
-            "description": "The capital city and political center of the nation. A bustling metropolis that combines modern architecture with historical landmarks.",
-            "imagePath": "Locations/Cities/holsord",
+            "id": "char-003",
+            "title": "Eliza the Mystic",
+            "description": "Eliza is the court mage and keeper of ancient knowledge. Her mastery of elemental magic is unparalleled in the known world. She discovered her magical abilities as a child when she accidentally set her family's barn ablaze. Since then, she has studied under the greatest mages of the realm and collected rare grimoires from across the lands.",
+            "imagePath": "Characters/eliza",
+            "category": "Characters",
+            "subcategory": "Magic Users"
+        },
+        {
+            "id": "char-004",
+            "title": "Riven the Rogue",
+            "description": "Riven is a mysterious figure in the kingdom's underworld. Part spy, part thief, and entirely unpredictable, he has connections in every major city. Despite his criminal dealings, he has occasionally provided crucial intelligence to the crown. His true identity remains unknown, with some believing he is actually several people using the same alias.",
+            "imagePath": "Characters/riven",
+            "category": "Characters",
+            "subcategory": "Outlaws"
+        },
+        {
+            "id": "hist-001",
+            "title": "The Great War",
+            "description": "The Great War was a decade-long conflict between the Eastern Kingdom and the Western Empire. It began when Emperor Valorian III claimed the Disputed Lands along the border. The war ended with the Treaty of Silver Lake, which established the current borders and led to a tense but stable peace between the two powers.",
+            "imagePath": "History/great_war",
+            "category": "History",
+            "subcategory": "Wars"
+        },
+        {
+            "id": "hist-002",
+            "title": "The Plague Years",
+            "description": "A dark period in the kingdom's history when a mysterious illness swept through the population. Nearly a third of all citizens perished before Court Physician Marlow discovered that the disease was being spread through contaminated well water. His implementation of water purification methods saved the kingdom from complete devastation.",
+            "imagePath": "History/plague",
+            "category": "History",
+            "subcategory": "Disasters"
+        },
+        {
+            "id": "hist-003",
+            "title": "The Founding of Eastwatch",
+            "description": "Eastwatch, the capital city, was founded 500 years ago by King Aldric I. He chose the location for its natural harbor and defensible position atop the cliffs. The original castle still stands at the center of the city, though it has been expanded and renovated many times over the centuries.",
+            "imagePath": "History/eastwatch_founding",
+            "category": "History",
+            "subcategory": "Settlements"
+        },
+        {
+            "id": "loc-001",
+            "title": "Eastwatch",
+            "description": "The capital city of the Eastern Kingdom, Eastwatch is built on a series of cliffs overlooking the Azure Sea. The city is divided into several districts: Royal Heights (where the castle and noble houses are located), Harbor District (center of commerce), Craftsman's Quarter (where the finest artisans work), and Lowtown (the densely populated area where most citizens live).",
+            "imagePath": "Locations/eastwatch",
             "category": "Locations",
             "subcategory": "Cities"
         },
         {
-            "id": "org_1",
-            "title": "United Contana",
-            "description": "A major international organization focused on promoting cooperation and development among member nations.",
-            "imagePath": "Organizations/united_contana",
+            "id": "loc-002",
+            "title": "The Whispering Woods",
+            "description": "A vast forest that covers the northern part of the kingdom. The trees here grow to immense heights, creating a canopy that blocks most sunlight. The forest is said to be enchanted, with many travelers reporting strange whispers and moving shadows. Despite its eerie reputation, the woods are home to unique herbs used in powerful medicines.",
+            "imagePath": "Locations/whispering_woods",
+            "category": "Locations",
+            "subcategory": "Natural Features"
+        },
+        {
+            "id": "loc-003",
+            "title": "The Sundered Peak",
+            "description": "A mountain split in two by a massive earthquake centuries ago. The resulting valley is now home to a monastery where monks study ancient texts and practice meditation. The peak is also the source of the kingdom's purest crystal, used in magical focuses and fine jewelry.",
+            "imagePath": "Locations/sundered_peak",
+            "category": "Locations",
+            "subcategory": "Landmarks"
+        },
+        {
+            "id": "org-001",
+            "title": "The Royal Council",
+            "description": "The governing body that advises the monarch on matters of state. The council consists of the Royal Treasurer, the Commander of the Guard, the Court Mage, the Master of Whispers (spymaster), and representatives from each of the major noble houses. Council meetings are held weekly in the Tower of Wisdom within the castle.",
+            "imagePath": "Organizations/royal_council",
             "category": "Organizations",
-            "subcategory": "International"
+            "subcategory": "Government"
         },
         {
-            "id": "char1",
-            "title": "Character 1",
-            "description": "This is a description of Character 1",
-            "imagePath": "Images/character1",
-            "category": "Characters",
-            "subcategory": "Main Characters"
+            "id": "org-002",
+            "title": "The Mage's Circle",
+            "description": "A society of magic practitioners who regulate the use of arcane powers throughout the kingdom. All those with magical abilities are required to register with the Circle, which provides training and oversight. The Circle's headquarters is a floating tower that moves around the kingdom, appearing in different locations each month.",
+            "imagePath": "Organizations/mages_circle",
+            "category": "Organizations",
+            "subcategory": "Magical"
         },
         {
-            "id": "char2",
-            "title": "Character 2",
-            "description": "This is a description of Character 2",
-            "imagePath": "Images/character2",
-            "category": "Characters",
-            "subcategory": "Main Characters"
+            "id": "org-003",
+            "title": "The Merchant's Guild",
+            "description": "A powerful association that controls most trade within the kingdom and negotiates with foreign merchants. Guild membership is expensive but provides protection, dispute resolution, and connections throughout the trading world. The Guild Hall in Eastwatch is one of the most opulent buildings in the city, showcasing the wealth of its members.",
+            "imagePath": "Organizations/merchants_guild",
+            "category": "Organizations",
+            "subcategory": "Commercial"
         },
         {
-            "id": "hist1",
-            "title": "Historical Event 1",
-            "description": "This is a description of Historical Event 1",
-            "imagePath": "Images/history1",
-            "category": "History",
-            "subcategory": "Ancient History"
+            "id": "org-004",
+            "title": "The Shadow Network",
+            "description": "A secretive organization of spies, thieves, and assassins that operates throughout the kingdom. Their services are expensive but guaranteed. It's rumored that even the crown occasionally employs their services for missions that require absolute discretion. The location of their headquarters is unknown, with members communicating through coded messages and secret drop points.",
+            "imagePath": "Organizations/shadow_network",
+            "category": "Organizations",
+            "subcategory": "Criminal"
         }
     ]
 } 

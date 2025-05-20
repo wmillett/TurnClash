@@ -1,0 +1,68 @@
+Codex Scroll View Setup Instructions
+===================================
+
+Follow these steps to set up the scrollable content view in the CodexPanel's MenuPage:
+
+1. Add Scroll View to MenuPage:
+
+   - Select the existing "MenuPage" GameObject in the CodexPanel hierarchy
+   - Right-click on MenuPage and select UI → Scroll View
+   - Rename the newly created ScrollView to "ScrollView"
+   - Position it to fill most of the MenuPage (leave room at the top for category buttons)
+
+2. Configure the Scroll View:
+
+   - Set the Scroll View's Anchor Points to stretch (Min: 0,0 and Max: 1,1)
+   - Set Margins to something like (Left: 20, Right: 20, Top: 80, Bottom: 20)
+   - Make sure "Vertical" scrolling is enabled and "Horizontal" is disabled
+   - Set the "Movement Type" to "Elastic" for better feel
+   - Set "Scrollbar Visibility" to "AutoHideAndExpandViewport"
+   - Adjust the "Elasticity" to around 0.1 for smoother scrolling
+   - Check "Inertia" to enable momentum-based scrolling
+
+3. Style the Scroll View:
+
+   - Select the "Scrollbar Vertical" inside the ScrollView
+   - Adjust width to around 15 pixels for a sleeker look
+   - Change the scrollbar colors to match your UI theme
+   - Consider adjusting the "Handle" size for aesthetics
+
+4. Configure the Content Container:
+
+   - Select the "Content" GameObject inside the Viewport
+   - Set anchor points to (Min: 0,1 and Max: 1,1) - anchoring to top
+   - Set pivot to (0.5, 1) - top center
+   - Reset position to X: 0, Y: 0
+   - Leave the height relatively small (will be expanded by code)
+   - Add a Vertical Layout Group component if you want automatic positioning
+   - If using Layout Group, set:
+     * Padding: 15 on all sides
+     * Spacing: 15
+     * Child Alignment: Upper Center
+     * Child Force Expand Width: true
+     * Child Force Expand Height: false
+     * Child Control Width: true
+     * Child Control Height: false
+
+5. Add the CodexScrollView Component:
+
+   - Make sure the ScrollView has the CodexScrollView component attached (this happens automatically)
+   - If you want to use a prefab for entry items:
+     * Create a prefab with a Button and TextMeshPro Text
+     * Assign this prefab to the "Entry Prefab" field in the CodexScrollView component
+   - Otherwise, the component will create buttons dynamically
+
+6. Final Adjustments:
+
+   - Test the scroll view by running the game
+   - Make sure the CodexPanelManager is finding the ScrollView properly
+   - Ensure buttons are being created and visible
+   - Adjust scrolling speed if needed
+   - Make sure the scroll view doesn't interfere with other UI elements
+
+Troubleshooting:
+- If entries don't appear, check the Console for errors
+- Verify your JSON data is loading correctly
+- Make sure the Content container's anchoring is set properly
+- Check that the ScrollView is active and visible
+- Ensure the CodexScrollView component is attached 

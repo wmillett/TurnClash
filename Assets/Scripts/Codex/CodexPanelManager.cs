@@ -21,6 +21,9 @@ public class CodexPanelManager : MonoBehaviour
     private TextMeshProUGUI entryDescriptionText;
     private Image entryImage;
     
+    // New Scroll View Reference
+    private CodexScrollView menuScrollView;
+    
     // Data
     private TextAsset codexJsonFile;
     
@@ -89,6 +92,24 @@ public class CodexPanelManager : MonoBehaviour
             entryTitleText = FindChildByName("Title")?.GetComponent<TextMeshProUGUI>();
             entryDescriptionText = FindChildByName("Description")?.GetComponent<TextMeshProUGUI>();
             entryImage = FindChildByName("Image")?.GetComponent<Image>();
+        }
+        
+        // Find or add scroll view component
+        if (menuPage != null)
+        {
+            GameObject scrollViewObj = FindChildByName("ScrollView");
+            if (scrollViewObj != null)
+            {
+                menuScrollView = scrollViewObj.GetComponent<CodexScrollView>();
+                if (menuScrollView == null)
+                {
+                    menuScrollView = scrollViewObj.AddComponent<CodexScrollView>();
+                }
+            }
+            else
+            {
+                Debug.LogError("ScrollView not found in MenuPage! Please add a ScrollView GameObject.");
+            }
         }
 
         // Load JSON file from Resources
@@ -183,11 +204,28 @@ public class CodexPanelManager : MonoBehaviour
         float screenHeight = Screen.height;
         float aspectRatio = screenWidth / screenHeight;
 
-        // Use consistent 60% width regardless of aspect ratio
-        float widthPercent = 0.6f;
-        float heightPercent = 0.8f;
+        // Adjust panel size based on aspect ratio
+        float widthPercent;
+        float heightPercent;
+        
+        // Handle common aspect ratios
+        if (aspectRatio >= 1.7f && aspectRatio <= 1.8f) // 16:9 (1.77...)
+        {
+            widthPercent = 0.75f;  // Use 75% of screen width
+            heightPercent = 0.85f; // Use 85% of screen height
+        }
+        else if (aspectRatio >= 1.5f && aspectRatio < 1.7f) // 16:10 (1.6)
+        {
+            widthPercent = 0.72f;  // Use 72% of screen width
+            heightPercent = 0.85f; // Use 85% of screen height
+        }
+        else // Default for other aspect ratios
+        {
+            widthPercent = 0.7f;   // Use 70% of screen width
+            heightPercent = 0.85f; // Use 85% of screen height
+        }
 
-        // Set the panel's size to a moderate size adjusted for aspect ratio
+        // Set the panel's size based on aspect ratio
         codexPanel.sizeDelta = new Vector2(screenWidth * widthPercent, screenHeight * heightPercent);
 
         // Force the scale to be exactly 1 to prevent scaling issues
@@ -306,9 +344,26 @@ public class CodexPanelManager : MonoBehaviour
             float screenHeight = Screen.height;
             float aspectRatio = screenWidth / screenHeight;
 
-            // Use consistent 60% width regardless of aspect ratio
-            float widthPercent = 0.6f;
-            float heightPercent = 0.8f;
+            // Adjust panel size based on aspect ratio
+            float widthPercent;
+            float heightPercent;
+            
+            // Handle common aspect ratios
+            if (aspectRatio >= 1.7f && aspectRatio <= 1.8f) // 16:9 (1.77...)
+            {
+                widthPercent = 0.75f;  // Use 75% of screen width
+                heightPercent = 0.85f; // Use 85% of screen height
+            }
+            else if (aspectRatio >= 1.5f && aspectRatio < 1.7f) // 16:10 (1.6)
+            {
+                widthPercent = 0.72f;  // Use 72% of screen width
+                heightPercent = 0.85f; // Use 85% of screen height
+            }
+            else // Default for other aspect ratios
+            {
+                widthPercent = 0.7f;   // Use 70% of screen width
+                heightPercent = 0.85f; // Use 85% of screen height
+            }
 
             // Set size with aspect ratio adjustment
             codexPanel.sizeDelta = new Vector2(screenWidth * widthPercent, screenHeight * heightPercent);
@@ -360,128 +415,87 @@ public class CodexPanelManager : MonoBehaviour
         Debug.Log($"Category selected: {category}");
         currentCategory = category;
         UpdateCategoryUI();
+        
+        // Make sure menu page is visible (not entry page)
+        ShowMenuPage();
     }
     
     private void UpdateCategoryUI()
     {
-        // Clear existing subcategories and entries
-        foreach (Transform child in subcategoryContainer)
+        // Get entries for current category
+        List<CodexEntry> categoryEntries = codexData.entries
+            .Where(e => e.category == currentCategory.ToString())
+            .ToList();
+        
+        Debug.Log($"Found {categoryEntries.Count} entries for category {currentCategory}");
+        
+        // Update the scroll view with these entries
+        if (menuScrollView != null)
         {
-            Destroy(child.gameObject);
+            menuScrollView.PopulateEntries(categoryEntries);
+        }
+        else
+        {
+            Debug.LogError("CodexScrollView component not found!");
         }
         
-        // Get unique subcategories for current category
-        var subcategories = codexData.entries
-            .Where(e => e.category == currentCategory.ToString())
-            .Select(e => e.subcategory)
-            .Distinct();
-            
-        // Create subcategory buttons
-        // foreach (string subcategory in subcategories)
-        // {
-        //     GameObject subcategoryObj = CreateSubcategoryObject(subcategory);
-        //     subcategoryObj.transform.SetParent(subcategoryContainer, false);
-        // }
+        // Update visual state of category buttons
+        UpdateCategoryButtonsState();
     }
     
-    // private GameObject CreateSubcategoryObject(string subcategory)
-    // {
-    //     GameObject subcategoryObj = new GameObject(subcategory);
-    //     RectTransform rectTransform = subcategoryObj.AddComponent<RectTransform>();
+    private void UpdateCategoryButtonsState()
+    {
+        // Style the selected button differently
+        Button[] categoryButtons = { charactersButton, historyButton, locationsButton, organizationsButton };
         
-    //     // Create header button
-    //     GameObject headerObj = new GameObject("Header");
-    //     headerObj.transform.SetParent(subcategoryObj.transform, false);
-    //     RectTransform headerRect = headerObj.AddComponent<RectTransform>();
-    //     Button headerButton = headerObj.AddComponent<Button>();
-    //     TextMeshProUGUI headerText = headerObj.AddComponent<TextMeshProUGUI>();
-        
-    //     // Setup header
-    //     headerText.text = subcategory;
-    //     headerText.alignment = TextAlignmentOptions.Left;
-    //     headerText.fontSize = 16;
-    //     headerText.color = Color.white;
-        
-    //     // Create expand/collapse arrow using Image
-    //     GameObject arrowObj = new GameObject("Arrow");
-    //     arrowObj.transform.SetParent(headerObj.transform, false);
-    //     RectTransform arrowRect = arrowObj.AddComponent<RectTransform>();
-    //     Image arrowImage = arrowObj.AddComponent<Image>();
-        
-    //     // Set arrow image to a simple triangle sprite
-    //     arrowImage.sprite = CreateTriangleSprite();
-    //     arrowImage.color = Color.white;
-        
-    //     // Position the arrow on the right side
-    //     arrowRect.anchorMin = new Vector2(1, 0.5f);
-    //     arrowRect.anchorMax = new Vector2(1, 0.5f);
-    //     arrowRect.pivot = new Vector2(0.5f, 0.5f);
-    //     arrowRect.sizeDelta = new Vector2(20, 20);
-    //     arrowRect.anchoredPosition = new Vector2(-10, 0);
-        
-    //     // Create entries container
-    //     GameObject entriesObj = new GameObject("Entries");
-    //     entriesObj.transform.SetParent(subcategoryObj.transform, false);
-    //     RectTransform entriesRect = entriesObj.AddComponent<RectTransform>();
-    //     VerticalLayoutGroup entriesLayout = entriesObj.AddComponent<VerticalLayoutGroup>();
-    //     entriesLayout.spacing = 5;
-    //     entriesLayout.padding = new RectOffset(20, 0, 0, 0);
-        
-    //     // Setup layout
-    //     LayoutElement layoutElement = subcategoryObj.AddComponent<LayoutElement>();
-    //     layoutElement.minHeight = 30;
-        
-    //     // Setup header button click
-    //     headerButton.onClick.AddListener(() => ToggleSubcategory(subcategory, entriesObj, arrowImage));
-        
-    //     // Initialize state
-    //     bool isExpanded = subcategoryExpanded.ContainsKey(subcategory) ? subcategoryExpanded[subcategory] : false;
-    //     entriesObj.SetActive(isExpanded);
-    //     arrowImage.transform.rotation = Quaternion.Euler(0, 0, isExpanded ? 0 : -90);
-        
-    //     return subcategoryObj;
-    // }
-
-    // private Sprite CreateTriangleSprite()
-    // {
-    //     // Create a simple triangle texture
-    //     Texture2D texture = new Texture2D(32, 32);
-    //     Color[] colors = new Color[32 * 32];
-        
-    //     for (int y = 0; y < 32; y++)
-    //     {
-    //         for (int x = 0; x < 32; x++)
-    //         {
-    //             // Create a simple triangle shape
-    //             float centerX = 16;
-    //             float centerY = 16;
-    //             float radius = 12;
+        foreach (Button button in categoryButtons)
+        {
+            if (button != null)
+            {
+                // Get button's category
+                CodexCategory buttonCategory = GetButtonCategory(button);
                 
-    //             // Calculate distance from center
-    //             float dx = x - centerX;
-    //             float dy = y - centerY;
-    //             float distance = Mathf.Sqrt(dx * dx + dy * dy);
+                // Update visual state
+                Image buttonImage = button.GetComponent<Image>();
+                TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
                 
-    //             // Create a triangle shape
-    //             if (distance < radius && 
-    //                 Mathf.Abs(dx) < radius * 0.8f && 
-    //                 dy > -radius * 0.5f)
-    //             {
-    //                 colors[y * 32 + x] = Color.white;
-    //             }
-    //             else
-    //             {
-    //                 colors[y * 32 + x] = Color.clear;
-    //             }
-    //         }
-    //     }
+                if (buttonImage != null)
+                {
+                    if (buttonCategory == currentCategory)
+                    {
+                        // Selected state
+                        buttonImage.color = new Color(0.3f, 0.3f, 0.8f, 1f);
+                        if (buttonText != null)
+                        {
+                            buttonText.color = Color.white;
+                            buttonText.fontStyle = FontStyles.Bold;
+                        }
+                    }
+                    else
+                    {
+                        // Normal state
+                        buttonImage.color = new Color(0.2f, 0.2f, 0.2f, 0.8f);
+                        if (buttonText != null)
+                        {
+                            buttonText.color = Color.white;
+                            buttonText.fontStyle = FontStyles.Normal;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    private CodexCategory GetButtonCategory(Button button)
+    {
+        if (button == charactersButton) return CodexCategory.Characters;
+        if (button == historyButton) return CodexCategory.History;
+        if (button == locationsButton) return CodexCategory.Locations;
+        if (button == organizationsButton) return CodexCategory.Organizations;
         
-    //     texture.SetPixels(colors);
-    //     texture.Apply();
-        
-    //     return Sprite.Create(texture, new Rect(0, 0, 32, 32), new Vector2(0.5f, 0.5f));
-    // }
-
+        return CodexCategory.Characters; // Default
+    }
+    
     private void ToggleSubcategory(string subcategory, GameObject entriesObj, Image arrowImage)
     {
         bool isExpanded = !entriesObj.activeSelf;
@@ -530,7 +544,7 @@ public class CodexPanelManager : MonoBehaviour
         return button;
     }
     
-    private void ShowEntry(CodexEntry entry)
+    public void ShowEntry(CodexEntry entry)
     {
         Debug.Log($"Showing entry: {entry.title}");
         currentEntry = entry;
