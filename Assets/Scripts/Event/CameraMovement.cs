@@ -4,6 +4,7 @@ public class CameraMovement : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 15f; // Increased from 5f
     [SerializeField] private float smoothTime = 0.1f; // Decreased from 0.3f for faster response
+    [SerializeField] private float speedMultiplier = 10f; // Speed multiplier when holding Alt
     private Vector3 velocity = Vector3.zero;
     private bool isEnabled = true;
 
@@ -32,10 +33,15 @@ public class CameraMovement : MonoBehaviour
         // Apply movement to camera
         if (movement != Vector2.zero)
         {
+            // Calculate current speed based on Alt key
+            float currentSpeed = Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt) 
+                ? moveSpeed * speedMultiplier 
+                : moveSpeed;
+
             // Calculate target position
             Vector3 targetPosition = transform.position;
-            targetPosition.x += movement.x * moveSpeed * Time.deltaTime;
-            targetPosition.y += movement.y * moveSpeed * Time.deltaTime;
+            targetPosition.x += movement.x * currentSpeed * Time.deltaTime;
+            targetPosition.y += movement.y * currentSpeed * Time.deltaTime;
             
             // Smoothly move camera to target position
             transform.position = Vector3.SmoothDamp(

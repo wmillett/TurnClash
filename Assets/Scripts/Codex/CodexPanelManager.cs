@@ -172,19 +172,18 @@ public class CodexPanelManager : MonoBehaviour
     
     private void SetupUI()
     {
-        // Set initial position in the middle of the screen
-        RectTransform canvasRect = codexPanel.parent as RectTransform;
-        if (canvasRect != null)
-        {
-            codexPanel.anchoredPosition = new Vector2(
-                canvasRect.rect.width - codexPanel.rect.width / 2,
-                canvasRect.rect.height / 2
-            );
-        }
-        else
-        {
-            codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0);
-        }
+        // Set initial position using screen coordinates
+        float screenWidth = Screen.width;
+        float screenHeight = Screen.height;
+        
+        // Set the panel's size (adjust these values as needed)
+        codexPanel.sizeDelta = new Vector2(400, screenHeight * 0.8f);
+        
+        // Position the panel off-screen to the right
+        codexPanel.anchorMin = new Vector2(1, 0.5f);
+        codexPanel.anchorMax = new Vector2(1, 0.5f);
+        codexPanel.pivot = new Vector2(1, 0.5f);
+        codexPanel.anchoredPosition = new Vector2(0, 0); // This will position it at the right edge of the screen
 
         menuPage.SetActive(true);
         entryPage.SetActive(false);
@@ -193,9 +192,8 @@ public class CodexPanelManager : MonoBehaviour
         currentCategory = CodexCategory.Characters;
         UpdateCategoryUI();
 
-        // Start with panel hidden but positioned correctly
+        // Start with panel hidden
         codexPanel.gameObject.SetActive(true);
-        codexPanel.anchoredPosition = new Vector2(codexPanel.anchoredPosition.x + codexPanel.rect.width, codexPanel.anchoredPosition.y);
         isPanelVisible = false;
     }
     
@@ -232,7 +230,7 @@ public class CodexPanelManager : MonoBehaviour
         {
             codexPanel.gameObject.SetActive(true);
             // Animate from off-screen to visible position
-            codexPanel.DOAnchorPosX(codexPanel.anchoredPosition.x - codexPanel.rect.width, slideDuration)
+            codexPanel.DOAnchorPosX(-codexPanel.rect.width, slideDuration)
                 .SetEase(slideEase)
                 .OnStart(() => {
                     if (panelMovement != null)
@@ -244,7 +242,7 @@ public class CodexPanelManager : MonoBehaviour
         else
         {
             // Animate to off-screen position
-            codexPanel.DOAnchorPosX(codexPanel.anchoredPosition.x + codexPanel.rect.width, slideDuration)
+            codexPanel.DOAnchorPosX(0, slideDuration)
                 .SetEase(slideEase)
                 .OnComplete(() => {
                     codexPanel.gameObject.SetActive(false);
