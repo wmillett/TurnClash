@@ -270,7 +270,7 @@ public class CodexPanelManager : MonoBehaviour
         toggleRect.anchoredPosition = new Vector2(5, 0); // Positive X means inward from left edge
         
         // Make the button smaller (adjust size as needed)
-        toggleRect.sizeDelta = new Vector2(30, 30);
+        toggleRect.sizeDelta = new Vector2(100, 100);
     }
     
     private void resetButtonPosition()
@@ -283,7 +283,7 @@ public class CodexPanelManager : MonoBehaviour
         toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0);
         
         // Restore original button size if needed
-        toggleRect.sizeDelta = new Vector2(30, 30);
+        toggleRect.sizeDelta = new Vector2(100, 30);
     }
     
     public void TogglePanel()
