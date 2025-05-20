@@ -199,7 +199,7 @@ public class CodexPanelManager : MonoBehaviour
         codexPanel.pivot = new Vector2(1, 0.5f);
         codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0); // Start fully off-screen
 
-        // Setup CategoryContainer
+        // Setup CategoryContainer directly
         if (categoryContainer != null)
         {
             RectTransform categoryRect = categoryContainer.GetComponent<RectTransform>();
@@ -208,17 +208,20 @@ public class CodexPanelManager : MonoBehaviour
                 // Reset scale to prevent size issues
                 categoryRect.localScale = Vector3.one;
                 
-                // Set proper anchoring and size
+                // Set proper anchoring and size relative to the CodexPanel
                 categoryRect.anchorMin = new Vector2(0, 1);  // Anchor to top-left
                 categoryRect.anchorMax = new Vector2(1, 1);  // Anchor to top-right
                 categoryRect.pivot = new Vector2(0.5f, 1);   // Pivot at top-center
                 
-                // Position it with a small margin from the top
-                categoryRect.anchoredPosition = new Vector2(0, -20);
+                // Position very close to the top of the CodexPanel
+                categoryRect.anchoredPosition = new Vector2(0, -5);
                 
-                // Set the fixed height and make it stretch horizontally
-                categoryRect.sizeDelta = new Vector2(0, 50); 
+                // Set appropriate height and make it stretch horizontally
+                categoryRect.sizeDelta = new Vector2(0, 50); // Increased height to 50 for bigger buttons
             }
+            
+            // Resize all category buttons
+            ResizeCategoryButtons();
         }
 
         // Ensure toggle button is always visible and positioned correctly
@@ -279,8 +282,8 @@ public class CodexPanelManager : MonoBehaviour
         toggleRect.SetParent(codexPanel.parent);
         toggleRect.anchorMin = new Vector2(1, 0.5f);
         toggleRect.anchorMax = new Vector2(1, 0.5f);
-        toggleRect.pivot = new Vector2(0.5f, 0.5f);
-        toggleRect.anchoredPosition = new Vector2(-toggleRect.rect.width / 2, 0);
+        toggleRect.pivot = new Vector2(1, 0.5f); // Change from 0.5f to 1 for right-aligned pivot
+        toggleRect.anchoredPosition = new Vector2(0, 0); // Fixed position 10 pixels from right edge
         
         // Restore original button size if needed
         toggleRect.sizeDelta = new Vector2(100, 30);
@@ -567,5 +570,31 @@ public class CodexPanelManager : MonoBehaviour
         Debug.Log("Back button clicked - showing menu page");
         entryPage.SetActive(false);
         menuPage.SetActive(true);
+    }
+
+    // Resize all category buttons to be bigger
+    private void ResizeCategoryButtons()
+    {
+        Button[] categoryButtons = { charactersButton, historyButton, locationsButton, organizationsButton };
+        
+        foreach (Button button in categoryButtons)
+        {
+            if (button != null)
+            {
+                RectTransform buttonRect = button.GetComponent<RectTransform>();
+                if (buttonRect != null)
+                {
+                    // Make buttons bigger
+                    buttonRect.sizeDelta = new Vector2(120, 40);
+                    
+                    // Adjust text size
+                    TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
+                    if (buttonText != null)
+                    {
+                        buttonText.fontSize = 18; // Increase font size
+                    }
+                }
+            }
+        }
     }
 } 

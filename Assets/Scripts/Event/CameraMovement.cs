@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class CameraMovement : MonoBehaviour
 {
-    [SerializeField] private float moveSpeed = 15f; // Increased from 5f
+    [SerializeField] private float moveSpeed = 55f; // Increased from 5f
     [SerializeField] private float smoothTime = 0.1f; // Decreased from 0.3f for faster response
-    [SerializeField] private float speedMultiplier = 10f; // Speed multiplier when holding Alt
+    [SerializeField] private float speedMultiplier = 100f; // Speed multiplier when holding Alt
     private Vector3 velocity = Vector3.zero;
     private bool isEnabled = true;
 

@@ -3,29 +3,32 @@
 
 // public class CategoryContainerSetup : MonoBehaviour
 // {
-//     public Transform categoryContainer; // Assign this in the Inspector
+//     [SerializeField] private float topMargin = 5f; // Distance from the top of parent - smaller value = higher position
+//     [SerializeField] private float containerHeight = 40f;
 
-//     public void SetupButtonContainer()
+//     private void Start()
 //     {
-//         // Add Horizontal Layout Group
-//         HorizontalLayoutGroup horizontalLayoutGroup = categoryContainer.gameObject.AddComponent<HorizontalLayoutGroup>();
-//         horizontalLayoutGroup.childControlWidth = false;
-//         horizontalLayoutGroup.childControlHeight = true;
-//         horizontalLayoutGroup.childForceExpandWidth = false;
-//         horizontalLayoutGroup.childForceExpandHeight = false;
-//         horizontalLayoutGroup.spacing = 20; // Set the spacing between buttons
-
-//         // Add Content Size Fitter
-//         ContentSizeFitter contentSizeFitter = categoryContainer.gameObject.AddComponent<ContentSizeFitter>();
-//         contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-//         contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
-//         // Set the position and size of the ButtonContainer
-//         RectTransform buttonContainerRect = categoryContainer.GetComponent<RectTransform>();
-//         buttonContainerRect.anchorMin = new Vector2(0.5f, 1);
-//         buttonContainerRect.anchorMax = new Vector2(0.5f, 1);
-//         buttonContainerRect.pivot = new Vector2(0.5f, 1);
-//         buttonContainerRect.anchoredPosition = new Vector2(0, -100); // Set the Y position to 100
-//         buttonContainerRect.sizeDelta = new Vector2(Screen.width, 50); // Adjust the width as needed
+//         // SetupContainer();
 //     }
+
+//     // public void SetupContainer()
+//     // {
+//     //     RectTransform categoryRect = GetComponent<RectTransform>();
+//     //     if (categoryRect != null)
+//     //     {
+//     //         // Reset scale to prevent size issues
+//     //         categoryRect.localScale = Vector3.one;
+            
+//     //         // Set proper anchoring and size
+//     //         categoryRect.anchorMin = new Vector2(0, 1);  // Anchor to top-left
+//     //         categoryRect.anchorMax = new Vector2(1, 1);  // Anchor to top-right
+//     //         categoryRect.pivot = new Vector2(0.5f, 1);   // Pivot at top-center
+            
+//     //         // Position it with a small margin from the top (smaller = higher position)
+//     //         categoryRect.anchoredPosition = new Vector2(0, -topMargin);
+            
+//     //         // Set the fixed height and make it stretch horizontally
+//     //         categoryRect.sizeDelta = new Vector2(0, containerHeight);
+//     //     }
+//     // }
 // }
