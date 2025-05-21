@@ -12,9 +12,11 @@ public class CodexScrollView : MonoBehaviour
     [SerializeField] private float paddingTop = 20f;
     [SerializeField] private float paddingBottom = 20f;
     
+    // Public accessor for content container
+    public RectTransform content => contentContainer;
+    
     // Reference to parent CodexPanelManager
     private CodexPanelManager codexPanelManager;
-    private Transform subcategoryContainer; // Reference to SubcategoryContainer
     
     private void Awake()
     {
@@ -30,19 +32,11 @@ public class CodexScrollView : MonoBehaviour
             }
         }
         
-        // Find SubcategoryContainer as a child of MenuPage
-        Transform menuPage = transform.parent;
-        if (menuPage != null)
+        // We don't need to find the subcategoryContainer here anymore
+        // as it will be assigned and managed by CodexPanelManager
+        if (contentContainer == null)
         {
-            subcategoryContainer = menuPage.Find("SubcategoryContainer");
-            if (subcategoryContainer == null)
-            {
-                Debug.LogError("SubcategoryContainer not found in MenuPage! Make sure it exists in the scene.");
-            }
-        }
-        else
-        {
-            Debug.LogError("MenuPage not found! CodexScrollView should be a child of MenuPage.");
+            Debug.LogError("Content container not found in ScrollView. Make sure the ScrollRect has a content RectTransform assigned.");
         }
     }
     
@@ -57,7 +51,7 @@ public class CodexScrollView : MonoBehaviour
             return;
         }
         
-        // Clear existing entries from subcategoryContainer
+        // Clear existing entries from content container
         ClearEntries();
         
         if (entries == null || entries.Count == 0)
@@ -86,17 +80,17 @@ public class CodexScrollView : MonoBehaviour
             
             if (entryPrefab != null)
             {
-                // Instantiate as child of subcategoryContainer instead of contentContainer
-                entryObj = Instantiate(entryPrefab, subcategoryContainer);
+                // Instantiate as child of content container
+                entryObj = Instantiate(entryPrefab, contentContainer);
             }
             else
             {
                 entryObj = CreateEntryButton(entry.title);
-                // Set parent to subcategoryContainer
-                entryObj.transform.SetParent(subcategoryContainer, false);
+                // Set parent to content container
+                entryObj.transform.SetParent(contentContainer, false);
             }
             
-            // Position entry within the subcategoryContainer
+            // Position entry within the content container
             RectTransform entryRect = entryObj.GetComponent<RectTransform>();
             if (entryRect == null)
             {
@@ -183,17 +177,17 @@ public class CodexScrollView : MonoBehaviour
     
     private void ClearEntries()
     {
-        // Remove all child objects from subcategoryContainer instead of contentContainer
-        if (subcategoryContainer != null)
+        // Remove all child objects from content container
+        if (contentContainer != null)
         {
-            foreach (Transform child in subcategoryContainer)
+            foreach (Transform child in contentContainer)
             {
                 Destroy(child.gameObject);
             }
         }
         else
         {
-            Debug.LogError("SubcategoryContainer is null, cannot clear entries");
+            Debug.LogError("Content container is null, cannot clear entries");
         }
     }
 } 

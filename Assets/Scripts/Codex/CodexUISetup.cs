@@ -45,6 +45,7 @@ public class CodexUISetup
     public void SetupUI()
     {
         SetupPanelPosition();
+        SetupMenuPage();
         SetupCategoryContainer();
         SetupSubcategoryContainer();
         SetupToggleButton();
@@ -67,6 +68,22 @@ public class CodexUISetup
             
             codexPanel.sizeDelta = new Vector2(screenWidth * widthPercent, screenHeight * heightPercent);
             codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0);
+        }
+    }
+
+    private void SetupMenuPage()
+    {
+        if (menuPage != null)
+        {
+            RectTransform menuRect = menuPage.GetComponent<RectTransform>();
+            if (menuRect != null)
+            {
+                menuRect.anchorMin = new Vector2(0, 0);
+                menuRect.anchorMax = new Vector2(1, 1);
+                menuRect.pivot = new Vector2(0.5f, 0.5f);
+                menuRect.offsetMin = Vector2.zero;
+                menuRect.offsetMax = Vector2.zero;
+            }
         }
     }
 
@@ -114,22 +131,26 @@ public class CodexUISetup
         if (layoutGroup == null)
         {
             layoutGroup = subcategoryContainer.gameObject.AddComponent<VerticalLayoutGroup>();
-            layoutGroup.childAlignment = TextAnchor.UpperCenter;
-            layoutGroup.spacing = 10;
-            layoutGroup.padding = new RectOffset(10, 10, 10, 10);
-            layoutGroup.childControlHeight = true;
-            layoutGroup.childControlWidth = true;
-            layoutGroup.childForceExpandHeight = false;
-            layoutGroup.childForceExpandWidth = true;
         }
+        
+        // Configure layout group for entry buttons
+        layoutGroup.childAlignment = TextAnchor.UpperCenter;
+        layoutGroup.spacing = 8; // Reduced spacing between buttons
+        layoutGroup.padding = new RectOffset(5, 5, 5, 5); // Reduced padding
+        layoutGroup.childControlHeight = true;
+        layoutGroup.childControlWidth = true;
+        layoutGroup.childForceExpandHeight = false;
+        layoutGroup.childForceExpandWidth = true;
         
         ContentSizeFitter sizeFitter = subcategoryContainer.GetComponent<ContentSizeFitter>();
         if (sizeFitter == null)
         {
             sizeFitter = subcategoryContainer.gameObject.AddComponent<ContentSizeFitter>();
-            sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-            sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
         }
+        
+        // Configure content size fitter
+        sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+        sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize; // Changed back to PreferredSize to accommodate all buttons
     }
 
     private void SetupToggleButton()
