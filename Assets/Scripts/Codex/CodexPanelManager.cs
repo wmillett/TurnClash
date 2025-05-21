@@ -38,6 +38,7 @@ public class CodexPanelManager : MonoBehaviour
     private bool isPanelVisible = false;
     private Dictionary<string, bool> subcategoryExpanded = new Dictionary<string, bool>();
     private CameraMovement panelMovement;
+    private CodexUISetup uiSetup;
 
     // Custom category button names
     private readonly Dictionary<string, CodexCategory> categoryButtonMap = new Dictionary<string, CodexCategory>
@@ -57,7 +58,7 @@ public class CodexPanelManager : MonoBehaviour
     {
         FindReferences();
         LoadCodexData();
-        SetupUI();
+        InitializeUISetup();
         SetupEventListeners();
     }
     
@@ -203,115 +204,20 @@ public class CodexPanelManager : MonoBehaviour
         }
     }
     
-    private void SetupUI()
+    private void InitializeUISetup()
     {
-        // Position and scale the Codex Panel
-        if (codexPanel != null)
-        {
-            // Set panel to go off-screen initially
-            float screenWidth = Screen.width;
-            float screenHeight = Screen.height;
-            
-            // Match scene anchor settings
-            codexPanel.anchorMin = new Vector2(1, 0.5f);
-            codexPanel.anchorMax = new Vector2(1, 0.5f);
-            codexPanel.pivot = new Vector2(1, 0.5f);
-            
-            // Determine size based on screen dimensions
-            float widthPercent = 0.3f; // Use 30% of screen width
-            float heightPercent = 0.8f; // Use 80% of screen height
-            
-            // Set the panel size
-            codexPanel.sizeDelta = new Vector2(screenWidth * widthPercent, screenHeight * heightPercent);
-            
-            // Position panel off-screen to the right
-            codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0);
-        }
-        
-        // Configure category buttons container
-        if (categoryContainer != null)
-        {
-            RectTransform categoryRect = categoryContainer.GetComponent<RectTransform>();
-            if (categoryRect != null)
-            {
-                // Reset scale to prevent size issues
-                categoryRect.localScale = Vector3.one;
-                
-                // Set proper anchoring and size relative to the CodexPanel
-                categoryRect.anchorMin = new Vector2(0, 1);  // Anchor to top-left
-                categoryRect.anchorMax = new Vector2(1, 1);  // Anchor to top-right
-                categoryRect.pivot = new Vector2(0.5f, 1);   // Pivot at top-center
-                
-                // Position very close to the top of the CodexPanel
-                categoryRect.anchoredPosition = new Vector2(0, -5);
-                
-                // Set appropriate height and make it stretch horizontally
-                categoryRect.sizeDelta = new Vector2(0, 50); // Increased height to 50 for bigger buttons
-            }
-            
-            // Resize all category buttons
-            ResizeCategoryButtons();
-        }
-        
-        // Configure subcategory container
-        if (subcategoryContainer != null)
-        {
-            RectTransform subcategoryRect = subcategoryContainer.GetComponent<RectTransform>();
-            if (subcategoryRect != null)
-            {
-                // Set proper anchoring and sizing
-                subcategoryRect.anchorMin = new Vector2(0, 0);  // Anchor to bottom-left
-                subcategoryRect.anchorMax = new Vector2(1, 1);  // Anchor to top-right
-                subcategoryRect.pivot = new Vector2(0.5f, 0.5f); // Pivot at center
-                
-                // Position below the category container
-                subcategoryRect.anchoredPosition = new Vector2(0, -60);
-                
-                // Adjust size to fill the rest of the panel area
-                subcategoryRect.offsetMin = new Vector2(10, 10); // Left, bottom margins
-                subcategoryRect.offsetMax = new Vector2(-10, -60); // Right, top (negative from top) margins
-                
-                // Add a Layout Group to arrange buttons properly
-                VerticalLayoutGroup layoutGroup = subcategoryContainer.GetComponent<VerticalLayoutGroup>();
-                if (layoutGroup == null)
-                {
-                    layoutGroup = subcategoryContainer.gameObject.AddComponent<VerticalLayoutGroup>();
-                    layoutGroup.childAlignment = TextAnchor.UpperCenter;
-                    layoutGroup.spacing = 15;
-                    layoutGroup.padding = new RectOffset(10, 10, 10, 10);
-                    layoutGroup.childControlHeight = true;
-                    layoutGroup.childControlWidth = true;
-                    layoutGroup.childForceExpandHeight = false;
-                    layoutGroup.childForceExpandWidth = true;
-                }
-                
-                // Add Content Size Fitter to adjust content size
-                ContentSizeFitter sizeFitter = subcategoryContainer.GetComponent<ContentSizeFitter>();
-                if (sizeFitter == null)
-                {
-                    sizeFitter = subcategoryContainer.gameObject.AddComponent<ContentSizeFitter>();
-                    sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
-                    sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-                }
-            }
-        }
-
-        // Ensure toggle button is always visible and positioned correctly
-        if (toggleButton != null)
-        {
-            resetButtonPosition();
-        }
-
-        menuPage.SetActive(true);
-        entryPage.SetActive(false);
-
-        // Set initial category
-        currentCategory = CodexCategory.Characters;
-        UpdateCategoryUI();
-
-        // Start with panel hidden
-        codexPanel.gameObject.SetActive(true);
-        isPanelVisible = false;
+        Button[] categoryButtons = { charactersButton, historyButton, locationsButton, organizationsButton };
+        uiSetup = new CodexUISetup(
+            codexPanel,
+            menuPage,
+            entryPage,
+            toggleButton,
+            categoryContainer,
+            subcategoryContainer,
+            categoryButtons,
+            this
+        );
+        uiSetup.SetupUI();
     }
     
     private void SetupEventListeners()
@@ -328,37 +234,6 @@ public class CodexPanelManager : MonoBehaviour
             locationsButton.onClick.AddListener(() => OnCategorySelected(CodexCategory.Locations));
         if (organizationsButton != null)
             organizationsButton.onClick.AddListener(() => OnCategorySelected(CodexCategory.Organizations));
-    }
-    
-
-    private void setButtonSize()
-    {
-        RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
-        toggleRect.SetParent(codexPanel);
-        
-        // Anchor to the left edge but slightly inset
-        toggleRect.anchorMin = new Vector2(0, 0.5f);
-        toggleRect.anchorMax = new Vector2(0, 0.5f);
-        toggleRect.pivot = new Vector2(1, 0.5f); // Change pivot to right side of button
-        
-        // Position the button so it's partially overlapping the left edge of the panel
-        toggleRect.anchoredPosition = new Vector2(5, 0); // Positive X means inward from left edge
-        
-        // Make the button smaller (adjust size as needed)
-        toggleRect.sizeDelta = new Vector2(100, 100);
-    }
-    
-    private void resetButtonPosition()
-    {
-        RectTransform toggleRect = toggleButton.GetComponent<RectTransform>();
-        toggleRect.SetParent(codexPanel.parent);
-        toggleRect.anchorMin = new Vector2(1, 0.5f);
-        toggleRect.anchorMax = new Vector2(1, 0.5f);
-        toggleRect.pivot = new Vector2(1, 0.5f); // Change from 0.5f to 1 for right-aligned pivot
-        toggleRect.anchoredPosition = new Vector2(0, 0); // Fixed position 10 pixels from right edge
-        
-        // Restore original button size if needed
-        toggleRect.sizeDelta = new Vector2(100, 30);
     }
     
     public void TogglePanel()
@@ -387,7 +262,7 @@ public class CodexPanelManager : MonoBehaviour
             // Ensure toggle button is a child of the panel
             if (toggleButton != null)
             {
-                setButtonSize();
+                uiSetup.SetButtonSize();
             }
 
             // Animate panel sliding in from right
@@ -409,7 +284,7 @@ public class CodexPanelManager : MonoBehaviour
                     // Move toggle button back to canvas level after animation
                     if (toggleButton != null)
                     {
-                        resetButtonPosition();
+                        uiSetup.ResetButtonPosition();
                     }
 
                     codexPanel.gameObject.SetActive(false);
@@ -421,7 +296,7 @@ public class CodexPanelManager : MonoBehaviour
         }
     }
     
-    private void OnCategorySelected(CodexCategory category)
+    public void OnCategorySelected(CodexCategory category)
     {
         Debug.Log($"Category selected: {category}");
         currentCategory = category;
@@ -534,24 +409,39 @@ public class CodexPanelManager : MonoBehaviour
     
     private Button CreateEntryButton(CodexEntry entry)
     {
-        GameObject buttonObj = new GameObject(entry.title);
-        RectTransform rectTransform = buttonObj.AddComponent<RectTransform>();
-        Button button = buttonObj.AddComponent<Button>();
-        TextMeshProUGUI buttonText = buttonObj.AddComponent<TextMeshProUGUI>();
-        
-        // Setup button appearance
-        buttonText.text = entry.title;
-        buttonText.alignment = TextAlignmentOptions.Left;
-        buttonText.fontSize = 14;
-        buttonText.color = Color.white;
-        
-        // Add hover effect
-        ColorBlock colors = button.colors;
-        colors.highlightedColor = new Color(0.8f, 0.8f, 0.8f);
-        button.colors = colors;
-        
+        if (uiSetup == null || uiSetup.BaseEntryButton == null)
+        {
+            Debug.LogError("Base entry button template not found!");
+            return null;
+        }
+
+        // Create a new button as a child of the subcategory container
+        GameObject buttonObj = GameObject.Instantiate(uiSetup.BaseEntryButton.gameObject, subcategoryContainer);
+        buttonObj.name = entry.title;
+        buttonObj.SetActive(true); // Make sure the new button is active
+
+        // Get the button component
+        Button button = buttonObj.GetComponent<Button>();
+        if (button == null)
+        {
+            Debug.LogError($"Button component not found on {entry.title} button!");
+            return null;
+        }
+
+        // Set up the button text
+        TextMeshProUGUI buttonText = buttonObj.GetComponentInChildren<TextMeshProUGUI>();
+        if (buttonText != null)
+        {
+            buttonText.text = entry.title;
+        }
+        else
+        {
+            Debug.LogError($"TextMeshProUGUI component not found on {entry.title} button!");
+        }
+
+        // Add click listener
         button.onClick.AddListener(() => ShowEntry(entry));
-        
+
         return button;
     }
     
@@ -595,32 +485,6 @@ public class CodexPanelManager : MonoBehaviour
         Debug.Log("Back button clicked - showing menu page");
         entryPage.SetActive(false);
         menuPage.SetActive(true);
-    }
-
-    // Resize all category buttons to be bigger
-    private void ResizeCategoryButtons()
-    {
-        Button[] categoryButtons = { charactersButton, historyButton, locationsButton, organizationsButton };
-        
-        foreach (Button button in categoryButtons)
-        {
-            if (button != null)
-            {
-                RectTransform buttonRect = button.GetComponent<RectTransform>();
-                if (buttonRect != null)
-                {
-                    // Make buttons bigger
-                    buttonRect.sizeDelta = new Vector2(120, 40);
-                    
-                    // Adjust text size
-                    TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
-                    if (buttonText != null)
-                    {
-                        buttonText.fontSize = 18; // Increase font size
-                    }
-                }
-            }
-        }
     }
 
     private void VerifyReferences()
