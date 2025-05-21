@@ -32,8 +32,6 @@ public class CodexScrollView : MonoBehaviour
             }
         }
         
-        // We don't need to find the subcategoryContainer here anymore
-        // as it will be assigned and managed by CodexPanelManager
         if (contentContainer == null)
         {
             Debug.LogError("Content container not found in ScrollView. Make sure the ScrollRect has a content RectTransform assigned.");

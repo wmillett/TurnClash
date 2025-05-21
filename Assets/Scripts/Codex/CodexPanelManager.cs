@@ -21,8 +21,9 @@ public class CodexPanelManager : MonoBehaviour
     private TextMeshProUGUI entryDescriptionText;
     private Image entryImage;
     
-    // New Scroll View Reference
+    // Scroll View References
     private CodexScrollView menuScrollView;
+    private CodexScrollView entryScrollView;
     private RectTransform entryPageScrollableContent; // Container for entry page's scrollable items
     
     // Data
@@ -102,73 +103,100 @@ public class CodexPanelManager : MonoBehaviour
             entryDescriptionText = FindChildInDescendants(entryPage.transform, "Description")?.GetComponent<TextMeshProUGUI>();
             entryImage = FindChildInDescendants(entryPage.transform, "Image")?.GetComponent<Image>();
 
-            // Setup container for scrollable entry content
-            Transform existingScrollContainer = entryPage.transform.Find("EntryScrollContent");
-            if (existingScrollContainer != null) {
-                entryPageScrollableContent = existingScrollContainer.GetComponent<RectTransform>();
-            } else {
-                GameObject containerObj = new GameObject("EntryScrollContent");
-                entryPageScrollableContent = containerObj.AddComponent<RectTransform>();
-                containerObj.transform.SetParent(entryPage.transform, false); 
-
-                entryPageScrollableContent.anchorMin = new Vector2(0, 1);
-                entryPageScrollableContent.anchorMax = new Vector2(1, 1);
-                entryPageScrollableContent.pivot = new Vector2(0.5f, 1);
-                entryPageScrollableContent.offsetMin = Vector2.zero; 
-                entryPageScrollableContent.offsetMax = Vector2.zero;
-                entryPageScrollableContent.sizeDelta = new Vector2(0, 100); // Initial height, will be adjusted by fitter
-
-                VerticalLayoutGroup vlg = containerObj.AddComponent<VerticalLayoutGroup>();
-                vlg.padding = new RectOffset(15, 15, 15, 15);
-                vlg.spacing = 10;
-                vlg.childControlWidth = true;
-                vlg.childForceExpandWidth = true;
-                vlg.childAlignment = TextAnchor.UpperCenter;
-
-
-                ContentSizeFitter csf = containerObj.AddComponent<ContentSizeFitter>();
-                csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-                
-                containerObj.SetActive(false); // Initially inactive until populated and shown
-            }
-
-            // Reparent existing elements to this new container
-            if (entryTitleText != null) entryTitleText.transform.SetParent(entryPageScrollableContent, false);
-            if (entryDescriptionText != null) entryDescriptionText.transform.SetParent(entryPageScrollableContent, false);
-            if (entryImage != null) entryImage.transform.SetParent(entryPageScrollableContent, false);
-        }
-        
-        // Find ScrollView as a direct child of CodexPanel
-        if (codexPanel != null) {
-            Transform scrollViewTransform = codexPanel.transform.Find("ScrollView");
-            if (scrollViewTransform != null)
+            // Find or set up EntryScrollView
+            Transform entryScrollViewTransform = entryPage.transform.Find("EntryScrollView");
+            if (entryScrollViewTransform != null)
             {
-                menuScrollView = scrollViewTransform.GetComponent<CodexScrollView>();
-                if (menuScrollView == null)
+                entryScrollView = entryScrollViewTransform.GetComponent<CodexScrollView>();
+                if (entryScrollView == null)
                 {
-                    Debug.LogWarning("CodexScrollView component not found on ScrollView, adding one.");
-                    menuScrollView = scrollViewTransform.gameObject.AddComponent<CodexScrollView>();
+                    entryScrollView = entryScrollViewTransform.gameObject.AddComponent<CodexScrollView>();
                 }
                 
-                // Check if ScrollView has proper setup
-                ScrollRect scrollRect = scrollViewTransform.GetComponent<ScrollRect>();
-                if (scrollRect == null)
-                {
-                    Debug.LogError("ScrollRect component not found on ScrollView GameObject!");
+                // Setup container for scrollable entry content
+                Transform existingScrollContainer = entryPage.transform.Find("EntryScrollContent");
+                if (existingScrollContainer != null) {
+                    entryPageScrollableContent = existingScrollContainer.GetComponent<RectTransform>();
+                } else {
+                    GameObject containerObj = new GameObject("EntryScrollContent");
+                    entryPageScrollableContent = containerObj.AddComponent<RectTransform>();
+                    containerObj.transform.SetParent(entryPage.transform, false);
+                    
+                    // Set up EntryScrollContent layout
+                    entryPageScrollableContent.anchorMin = new Vector2(0, 0);
+                    entryPageScrollableContent.anchorMax = new Vector2(1, 1);
+                    entryPageScrollableContent.pivot = new Vector2(0.5f, 0.5f);
+                    entryPageScrollableContent.offsetMin = new Vector2(10, 10);
+                    entryPageScrollableContent.offsetMax = new Vector2(-10, -10);
+                    
+                    VerticalLayoutGroup vlg = containerObj.AddComponent<VerticalLayoutGroup>();
+                    vlg.padding = new RectOffset(15, 15, 15, 15);
+                    vlg.spacing = 10;
+                    vlg.childControlWidth = true;
+                    vlg.childForceExpandWidth = true;
+                    vlg.childAlignment = TextAnchor.UpperCenter;
+                    
+                    ContentSizeFitter csf = containerObj.AddComponent<ContentSizeFitter>();
+                    csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
                 }
-                else if (scrollRect.content == null)
+                
+                // Reparent elements to EntryScrollContent and place it in EntryScrollView.content
+                if (entryPageScrollableContent != null && entryScrollView.content != null)
                 {
-                    Debug.LogError("ScrollRect's content RectTransform is not assigned. Make sure it has a Viewport with Content child!");
-                }
-                else
-                {
-                    // All good, scrollRect has content assigned
-                    Debug.Log("ScrollView properly set up with content: " + scrollRect.content.name);
+                    // Move EntryScrollContent to be a child of the scroll view's content
+                    entryPageScrollableContent.SetParent(entryScrollView.content, false);
+                    
+                    // Move UI elements to EntryScrollContent if they're not already there
+                    if (entryTitleText != null && entryTitleText.transform.parent != entryPageScrollableContent)
+                        entryTitleText.transform.SetParent(entryPageScrollableContent, false);
+                    
+                    if (entryDescriptionText != null && entryDescriptionText.transform.parent != entryPageScrollableContent)
+                        entryDescriptionText.transform.SetParent(entryPageScrollableContent, false);
+                    
+                    if (entryImage != null && entryImage.transform.parent != entryPageScrollableContent)
+                        entryImage.transform.SetParent(entryPageScrollableContent, false);
                 }
             }
             else
             {
-                Debug.LogError("ScrollView GameObject not found as a direct child of CodexPanel!");
+                Debug.LogError("EntryScrollView not found as a child of EntryPage!");
+            }
+        }
+        
+        // Find MenuScrollView as a child of MenuPage
+        if (menuPage != null)
+        {
+            Transform menuScrollViewTransform = menuPage.transform.Find("MenuScrollView");
+            if (menuScrollViewTransform != null)
+            {
+                menuScrollView = menuScrollViewTransform.GetComponent<CodexScrollView>();
+                if (menuScrollView == null)
+                {
+                    Debug.LogWarning("CodexScrollView component not found on MenuScrollView, adding one.");
+                    menuScrollView = menuScrollViewTransform.gameObject.AddComponent<CodexScrollView>();
+                }
+                
+                // Move subcategoryContainer to MenuScrollView's content
+                if (subcategoryContainer != null && menuScrollView.content != null)
+                {
+                    subcategoryContainer.SetParent(menuScrollView.content, false);
+                    
+                    // Setup proper layout
+                    RectTransform subcategoryRect = subcategoryContainer.GetComponent<RectTransform>();
+                    if (subcategoryRect != null)
+                    {
+                        subcategoryRect.anchorMin = new Vector2(0, 1);
+                        subcategoryRect.anchorMax = new Vector2(1, 1);
+                        subcategoryRect.pivot = new Vector2(0.5f, 1);
+                        subcategoryRect.anchoredPosition = Vector2.zero;
+                        subcategoryRect.offsetMin = new Vector2(10, 0);
+                        subcategoryRect.offsetMax = new Vector2(-10, 0);
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogError("MenuScrollView GameObject not found as a child of MenuPage!");
             }
         }
 
@@ -384,10 +412,16 @@ public class CodexPanelManager : MonoBehaviour
         if (menuScrollView != null)
         {
             menuScrollView.PopulateEntries(categoryEntries);
+            
+            // Reset scroll position to top
+            if (menuScrollView.content != null)
+            {
+                menuScrollView.content.anchoredPosition = Vector2.zero;
+            }
         }
         else
         {
-            Debug.LogError("CodexScrollView component not found!");
+            Debug.LogError("MenuScrollView component not found!");
         }
         
         // Update visual state of category buttons
@@ -512,14 +546,9 @@ public class CodexPanelManager : MonoBehaviour
     
     public void ShowEntry(CodexEntry entry)
     {
-        Debug.Log($"Showing entry: {entry.title} using shared ScrollView");
+        Debug.Log($"Showing entry: {entry.title}");
         currentEntry = entry;
 
-        if (entryPageScrollableContent == null)
-        {
-            Debug.LogError("entryPageScrollableContent is null. Cannot show entry.");
-            return;
-        }
         if (entryTitleText == null || entryDescriptionText == null || entryImage == null)
         {
             Debug.LogError("One or more entry page UI elements (Title, Description, Image) are null.");
@@ -548,92 +577,31 @@ public class CodexPanelManager : MonoBehaviour
             entryImage.gameObject.SetActive(false);
         }
         
-        ActivateEntryPageContent();
+        ShowEntryPage();
     }
     
-    private void ActivateEntryPageContent()
+    private void ShowEntryPage()
     {
-        menuPage.SetActive(false); 
-        entryPage.SetActive(true); // Keep EntryPage active for BackButton, etc.
-
-        if (menuScrollView == null)
+        menuPage.SetActive(false);
+        entryPage.SetActive(true);
+        
+        // Reset entry scroll position to top
+        if (entryScrollView != null && entryScrollView.content != null)
         {
-            Debug.LogError("MenuScrollView is not available.");
-            return;
-        }
-
-        // Detach menu content (subcategoryContainer) from scroll view
-        if (subcategoryContainer != null && subcategoryContainer.parent == menuScrollView.transform)
-        {
-            subcategoryContainer.SetParent(menuPage.transform); // Store it back under MenuPage
-            subcategoryContainer.gameObject.SetActive(false);
-        }
-
-        // Attach entry page scrollable content to scroll view
-        if (entryPageScrollableContent != null)
-        {
-            entryPageScrollableContent.SetParent(menuScrollView.content, false);
-            RectTransform entryRect = entryPageScrollableContent.GetComponent<RectTransform>();
-            entryRect.anchorMin = new Vector2(0, 1);
-            entryRect.anchorMax = new Vector2(1, 1);
-            entryRect.pivot = new Vector2(0.5f, 1);
-            entryRect.anchoredPosition = Vector2.zero;
-            entryRect.sizeDelta = new Vector2(0, entryRect.sizeDelta.y); // Keep height, stretch width
-
-            entryPageScrollableContent.gameObject.SetActive(true);
-            
-            // Ensure the scroll view is scrolled to the top
-            menuScrollView.content.anchoredPosition = new Vector2(menuScrollView.content.anchoredPosition.x, 0);
-        }
-        else
-        {
-            Debug.LogError("entryPageScrollableContent is null. Cannot attach to ScrollView.");
+            entryScrollView.content.anchoredPosition = Vector2.zero;
         }
     }
     
     private void ShowMenuPage()
     {
-        Debug.Log("Showing menu page with shared ScrollView");
-        entryPage.SetActive(false); // Deactivate the whole EntryPage GO (including its non-scrollable parts if any are left there)
-        menuPage.SetActive(true);   // Activate the MenuPage GO (for CategoryContainer, etc.)
-
-        if (menuScrollView == null)
-        {
-            Debug.LogError("MenuScrollView is not available for showing menu page.");
-            return;
-        }
+        Debug.Log("Showing menu page");
+        entryPage.SetActive(false);
+        menuPage.SetActive(true);
         
-        // Detach entry page content from scroll view if it's there
-        if (entryPageScrollableContent != null && entryPageScrollableContent.parent == menuScrollView.content)
+        // Reset menu scroll position to top
+        if (menuScrollView != null && menuScrollView.content != null)
         {
-            entryPageScrollableContent.SetParent(entryPage.transform, false); 
-            entryPageScrollableContent.gameObject.SetActive(false);
-        }
-
-        // Attach subcategory container (menu items) to scroll view content
-        if (subcategoryContainer != null)
-        {
-            subcategoryContainer.SetParent(menuScrollView.content, false);
-            RectTransform subCatRect = subcategoryContainer.GetComponent<RectTransform>();
-            if (subCatRect != null)
-            {
-                subCatRect.anchorMin = new Vector2(0, 1); 
-                subCatRect.anchorMax = new Vector2(1, 1);
-                subCatRect.pivot = new Vector2(0.5f, 1);
-                subCatRect.anchoredPosition = Vector2.zero;
-                subCatRect.sizeDelta = new Vector2(0, subCatRect.sizeDelta.y); // Keep its height, stretch width
-            }
-            subcategoryContainer.gameObject.SetActive(true);
-            
-            // Update UI for the selected category
-            UpdateCategoryUI();
-            
-            // Ensure the scroll view is scrolled to the top
-            menuScrollView.content.anchoredPosition = new Vector2(menuScrollView.content.anchoredPosition.x, 0);
-        }
-        else
-        {
-            Debug.LogError("SubcategoryContainer is null. Cannot attach to ScrollView.");
+            menuScrollView.content.anchoredPosition = Vector2.zero;
         }
     }
 
@@ -648,5 +616,7 @@ public class CodexPanelManager : MonoBehaviour
         if (entryTitleText == null) Debug.LogError("EntryTitleText not found!");
         if (entryDescriptionText == null) Debug.LogError("EntryDescriptionText not found!");
         if (entryImage == null) Debug.LogError("EntryImage not found!");
+        if (menuScrollView == null) Debug.LogError("MenuScrollView not found!");
+        if (entryScrollView == null) Debug.LogError("EntryScrollView not found!");
     }
 } 
