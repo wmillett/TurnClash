@@ -14,7 +14,7 @@ public class CodexPanelManager : MonoBehaviour
     private Button toggleButton;
     private Button backButton;
     private Transform categoryContainer;
-    private Transform subcategoryContainer;
+    [SerializeField] private Transform subcategoryContainer;
     
     // Entry Page References
     private TextMeshProUGUI entryTitleText;
@@ -82,7 +82,13 @@ public class CodexPanelManager : MonoBehaviour
         menuPage = FindChildByName("MenuPage");
         entryPage = FindChildByName("EntryPage");
         categoryContainer = FindChildByName("CategoryContainer")?.transform;
-        subcategoryContainer = FindChildByName("SubcategoryContainer")?.transform;
+        
+        // Remove the code that searches for SubcategoryContainer since it will be set in Inspector
+        if (subcategoryContainer == null)
+        {
+            Debug.LogError("SubcategoryContainer not assigned in Inspector!");
+        }
+        
         toggleButton = FindChildByName("ToggleButton")?.GetComponent<Button>();
         backButton = FindChildByName("BackButton")?.GetComponent<Button>();
 
@@ -118,9 +124,9 @@ public class CodexPanelManager : MonoBehaviour
         {
             Debug.LogError("CodexData.json not found in Resources folder!");
         }
-
-        // Log any missing components
-        LogMissingComponents();
+        
+        // Verify references
+        VerifyReferences();
     }
 
     private GameObject FindChildByName(string name)
@@ -199,45 +205,30 @@ public class CodexPanelManager : MonoBehaviour
     
     private void SetupUI()
     {
-        // Set initial position using screen coordinates
-        float screenWidth = Screen.width;
-        float screenHeight = Screen.height;
-        float aspectRatio = screenWidth / screenHeight;
-
-        // Adjust panel size based on aspect ratio
-        float widthPercent;
-        float heightPercent;
+        // Position and scale the Codex Panel
+        if (codexPanel != null)
+        {
+            // Set panel to go off-screen initially
+            float screenWidth = Screen.width;
+            float screenHeight = Screen.height;
+            
+            // Match scene anchor settings
+            codexPanel.anchorMin = new Vector2(1, 0.5f);
+            codexPanel.anchorMax = new Vector2(1, 0.5f);
+            codexPanel.pivot = new Vector2(1, 0.5f);
+            
+            // Determine size based on screen dimensions
+            float widthPercent = 0.3f; // Use 30% of screen width
+            float heightPercent = 0.8f; // Use 80% of screen height
+            
+            // Set the panel size
+            codexPanel.sizeDelta = new Vector2(screenWidth * widthPercent, screenHeight * heightPercent);
+            
+            // Position panel off-screen to the right
+            codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0);
+        }
         
-        // Handle common aspect ratios
-        if (aspectRatio >= 1.7f && aspectRatio <= 1.8f) // 16:9 (1.77...)
-        {
-            widthPercent = 0.75f;  // Use 75% of screen width
-            heightPercent = 0.85f; // Use 85% of screen height
-        }
-        else if (aspectRatio >= 1.5f && aspectRatio < 1.7f) // 16:10 (1.6)
-        {
-            widthPercent = 0.72f;  // Use 72% of screen width
-            heightPercent = 0.85f; // Use 85% of screen height
-        }
-        else // Default for other aspect ratios
-        {
-            widthPercent = 0.7f;   // Use 70% of screen width
-            heightPercent = 0.85f; // Use 85% of screen height
-        }
-
-        // Set the panel's size based on aspect ratio
-        codexPanel.sizeDelta = new Vector2(screenWidth * widthPercent, screenHeight * heightPercent);
-
-        // Force the scale to be exactly 1 to prevent scaling issues
-        codexPanel.localScale = Vector3.one;
-
-        // Position the panel on the right side of the screen
-        codexPanel.anchorMin = new Vector2(1, 0.5f);
-        codexPanel.anchorMax = new Vector2(1, 0.5f);
-        codexPanel.pivot = new Vector2(1, 0.5f);
-        codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0); // Start fully off-screen
-
-        // Setup CategoryContainer directly
+        // Configure category buttons container
         if (categoryContainer != null)
         {
             RectTransform categoryRect = categoryContainer.GetComponent<RectTransform>();
@@ -260,6 +251,49 @@ public class CodexPanelManager : MonoBehaviour
             
             // Resize all category buttons
             ResizeCategoryButtons();
+        }
+        
+        // Configure subcategory container
+        if (subcategoryContainer != null)
+        {
+            RectTransform subcategoryRect = subcategoryContainer.GetComponent<RectTransform>();
+            if (subcategoryRect != null)
+            {
+                // Set proper anchoring and sizing
+                subcategoryRect.anchorMin = new Vector2(0, 0);  // Anchor to bottom-left
+                subcategoryRect.anchorMax = new Vector2(1, 1);  // Anchor to top-right
+                subcategoryRect.pivot = new Vector2(0.5f, 0.5f); // Pivot at center
+                
+                // Position below the category container
+                subcategoryRect.anchoredPosition = new Vector2(0, -60);
+                
+                // Adjust size to fill the rest of the panel area
+                subcategoryRect.offsetMin = new Vector2(10, 10); // Left, bottom margins
+                subcategoryRect.offsetMax = new Vector2(-10, -60); // Right, top (negative from top) margins
+                
+                // Add a Layout Group to arrange buttons properly
+                VerticalLayoutGroup layoutGroup = subcategoryContainer.GetComponent<VerticalLayoutGroup>();
+                if (layoutGroup == null)
+                {
+                    layoutGroup = subcategoryContainer.gameObject.AddComponent<VerticalLayoutGroup>();
+                    layoutGroup.childAlignment = TextAnchor.UpperCenter;
+                    layoutGroup.spacing = 15;
+                    layoutGroup.padding = new RectOffset(10, 10, 10, 10);
+                    layoutGroup.childControlHeight = true;
+                    layoutGroup.childControlWidth = true;
+                    layoutGroup.childForceExpandHeight = false;
+                    layoutGroup.childForceExpandWidth = true;
+                }
+                
+                // Add Content Size Fitter to adjust content size
+                ContentSizeFitter sizeFitter = subcategoryContainer.GetComponent<ContentSizeFitter>();
+                if (sizeFitter == null)
+                {
+                    sizeFitter = subcategoryContainer.gameObject.AddComponent<ContentSizeFitter>();
+                    sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+                    sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                }
+            }
         }
 
         // Ensure toggle button is always visible and positioned correctly
@@ -339,33 +373,15 @@ public class CodexPanelManager : MonoBehaviour
             // Force scale to be exactly 1
             codexPanel.localScale = Vector3.one;
 
-            // Get screen dimensions and aspect ratio
+            // Get screen dimensions
             float screenWidth = Screen.width;
             float screenHeight = Screen.height;
-            float aspectRatio = screenWidth / screenHeight;
-
-            // Adjust panel size based on aspect ratio
-            float widthPercent;
-            float heightPercent;
             
-            // Handle common aspect ratios
-            if (aspectRatio >= 1.7f && aspectRatio <= 1.8f) // 16:9 (1.77...)
-            {
-                widthPercent = 0.75f;  // Use 75% of screen width
-                heightPercent = 0.85f; // Use 85% of screen height
-            }
-            else if (aspectRatio >= 1.5f && aspectRatio < 1.7f) // 16:10 (1.6)
-            {
-                widthPercent = 0.72f;  // Use 72% of screen width
-                heightPercent = 0.85f; // Use 85% of screen height
-            }
-            else // Default for other aspect ratios
-            {
-                widthPercent = 0.7f;   // Use 70% of screen width
-                heightPercent = 0.85f; // Use 85% of screen height
-            }
-
-            // Set size with aspect ratio adjustment
+            // Set consistent panel size (30% width, 80% height)
+            float widthPercent = 0.3f;
+            float heightPercent = 0.8f;
+            
+            // Set size
             codexPanel.sizeDelta = new Vector2(screenWidth * widthPercent, screenHeight * heightPercent);
 
             // Ensure toggle button is a child of the panel
@@ -374,12 +390,7 @@ public class CodexPanelManager : MonoBehaviour
                 setButtonSize();
             }
 
-            // Log panel size for debugging
-            Debug.Log($"Screen size: {screenWidth} x {screenHeight}, Aspect ratio: {aspectRatio}");
-            Debug.Log($"Panel size: {codexPanel.rect.width} x {codexPanel.rect.height}");
-            Debug.Log($"Panel local scale: {codexPanel.localScale}");
-
-            // Animate panel sliding in
+            // Animate panel sliding in from right
             codexPanel.DOAnchorPosX(0, slideDuration)
                 .SetEase(slideEase)
                 .OnStart(() => {
@@ -391,7 +402,7 @@ public class CodexPanelManager : MonoBehaviour
         }
         else
         {
-            // Animate panel sliding out
+            // Animate panel sliding out to the right
             codexPanel.DOAnchorPosX(codexPanel.rect.width, slideDuration)
                 .SetEase(slideEase)
                 .OnComplete(() => {
@@ -610,5 +621,18 @@ public class CodexPanelManager : MonoBehaviour
                 }
             }
         }
+    }
+
+    private void VerifyReferences()
+    {
+        if (menuPage == null) Debug.LogError("MenuPage not found!");
+        if (entryPage == null) Debug.LogError("EntryPage not found!");
+        if (categoryContainer == null) Debug.LogError("CategoryContainer not found!");
+        if (subcategoryContainer == null) Debug.LogError("SubcategoryContainer not found!");
+        if (toggleButton == null) Debug.LogError("ToggleButton not found!");
+        if (backButton == null) Debug.LogError("BackButton not found!");
+        if (entryTitleText == null) Debug.LogError("EntryTitleText not found!");
+        if (entryDescriptionText == null) Debug.LogError("EntryDescriptionText not found!");
+        if (entryImage == null) Debug.LogError("EntryImage not found!");
     }
 } 
