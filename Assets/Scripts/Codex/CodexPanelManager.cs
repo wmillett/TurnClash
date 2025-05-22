@@ -103,64 +103,64 @@ public class CodexPanelManager : MonoBehaviour
             entryDescriptionText = FindChildInDescendants(entryPage.transform, "Description")?.GetComponent<TextMeshProUGUI>();
             entryImage = FindChildInDescendants(entryPage.transform, "Image")?.GetComponent<Image>();
 
-            // Find or set up EntryScrollView
-            Transform entryScrollViewTransform = entryPage.transform.Find("EntryScrollView");
-            if (entryScrollViewTransform != null)
-            {
-                entryScrollView = entryScrollViewTransform.GetComponent<CodexScrollView>();
-                if (entryScrollView == null)
-                {
-                    entryScrollView = entryScrollViewTransform.gameObject.AddComponent<CodexScrollView>();
-                }
+            // // Find or set up EntryScrollView
+            // Transform entryScrollViewTransform = entryPage.transform.Find("EntryScrollView");
+            // if (entryScrollViewTransform != null)
+            // {
+            //     entryScrollView = entryScrollViewTransform.GetComponent<CodexScrollView>();
+            //     if (entryScrollView == null)
+            //     {
+            //         entryScrollView = entryScrollViewTransform.gameObject.AddComponent<CodexScrollView>();
+            //     }
                 
-                // Setup container for scrollable entry content
-                Transform existingScrollContainer = entryPage.transform.Find("EntryScrollContent");
-                if (existingScrollContainer != null) {
-                    entryPageScrollableContent = existingScrollContainer.GetComponent<RectTransform>();
-                } else {
-                    GameObject containerObj = new GameObject("EntryScrollContent");
-                    entryPageScrollableContent = containerObj.AddComponent<RectTransform>();
-                    containerObj.transform.SetParent(entryPage.transform, false);
+            //     // Setup container for scrollable entry content
+            //     Transform existingScrollContainer = entryPage.transform.Find("EntryScrollContent");
+            //     if (existingScrollContainer != null) {
+            //         entryPageScrollableContent = existingScrollContainer.GetComponent<RectTransform>();
+            //     } else {
+            //         GameObject containerObj = new GameObject("EntryScrollContent");
+            //         entryPageScrollableContent = containerObj.AddComponent<RectTransform>();
+            //         containerObj.transform.SetParent(entryPage.transform, false);
                     
-                    // Set up EntryScrollContent layout
-                    entryPageScrollableContent.anchorMin = new Vector2(0, 0);
-                    entryPageScrollableContent.anchorMax = new Vector2(1, 1);
-                    entryPageScrollableContent.pivot = new Vector2(0.5f, 0.5f);
-                    entryPageScrollableContent.offsetMin = new Vector2(10, 10);
-                    entryPageScrollableContent.offsetMax = new Vector2(-10, -10);
+            //         // Set up EntryScrollContent layout
+            //         entryPageScrollableContent.anchorMin = new Vector2(0, 0);
+            //         entryPageScrollableContent.anchorMax = new Vector2(1, 1);
+            //         entryPageScrollableContent.pivot = new Vector2(0.5f, 0.5f);
+            //         entryPageScrollableContent.offsetMin = new Vector2(10, 10);
+            //         entryPageScrollableContent.offsetMax = new Vector2(-10, -10);
                     
-                    VerticalLayoutGroup vlg = containerObj.AddComponent<VerticalLayoutGroup>();
-                    vlg.padding = new RectOffset(15, 15, 15, 15);
-                    vlg.spacing = 10;
-                    vlg.childControlWidth = true;
-                    vlg.childForceExpandWidth = true;
-                    vlg.childAlignment = TextAnchor.UpperCenter;
+            //         VerticalLayoutGroup vlg = containerObj.AddComponent<VerticalLayoutGroup>();
+            //         vlg.padding = new RectOffset(15, 15, 15, 15);
+            //         vlg.spacing = 10;
+            //         vlg.childControlWidth = true;
+            //         vlg.childForceExpandWidth = true;
+            //         vlg.childAlignment = TextAnchor.UpperCenter;
                     
-                    ContentSizeFitter csf = containerObj.AddComponent<ContentSizeFitter>();
-                    csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-                }
+            //         ContentSizeFitter csf = containerObj.AddComponent<ContentSizeFitter>();
+            //         csf.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            //     }
                 
-                // Reparent elements to EntryScrollContent and place it in EntryScrollView.content
-                if (entryPageScrollableContent != null && entryScrollView.content != null)
-                {
-                    // Move EntryScrollContent to be a child of the scroll view's content
-                    entryPageScrollableContent.SetParent(entryScrollView.content, false);
+            //     // Reparent elements to EntryScrollContent and place it in EntryScrollView.content
+            //     if (entryPageScrollableContent != null && entryScrollView.content != null)
+            //     {
+            //         // Move EntryScrollContent to be a child of the scroll view's content
+            //         entryPageScrollableContent.SetParent(entryScrollView.content, false);
                     
-                    // Move UI elements to EntryScrollContent if they're not already there
-                    if (entryTitleText != null && entryTitleText.transform.parent != entryPageScrollableContent)
-                        entryTitleText.transform.SetParent(entryPageScrollableContent, false);
+            //         // Move UI elements to EntryScrollContent if they're not already there
+            //         if (entryTitleText != null && entryTitleText.transform.parent != entryPageScrollableContent)
+            //             entryTitleText.transform.SetParent(entryPageScrollableContent, false);
                     
-                    if (entryDescriptionText != null && entryDescriptionText.transform.parent != entryPageScrollableContent)
-                        entryDescriptionText.transform.SetParent(entryPageScrollableContent, false);
+            //         if (entryDescriptionText != null && entryDescriptionText.transform.parent != entryPageScrollableContent)
+            //             entryDescriptionText.transform.SetParent(entryPageScrollableContent, false);
                     
-                    if (entryImage != null && entryImage.transform.parent != entryPageScrollableContent)
-                        entryImage.transform.SetParent(entryPageScrollableContent, false);
-                }
-            }
-            else
-            {
-                Debug.LogError("EntryScrollView not found as a child of EntryPage!");
-            }
+            //         if (entryImage != null && entryImage.transform.parent != entryPageScrollableContent)
+            //             entryImage.transform.SetParent(entryPageScrollableContent, false);
+            //     }
+            // }
+            // else
+            // {
+            //     Debug.LogError("EntryScrollView not found as a child of EntryPage!");
+            // }
         }
         
         // Find MenuScrollView as a child of MenuPage
@@ -556,7 +556,44 @@ public class CodexPanelManager : MonoBehaviour
         }
 
         entryTitleText.text = entry.title;
-        entryDescriptionText.text = entry.description;
+        
+        // Move description text to be a child of the scroll view's content
+        if (entryScrollView != null && entryScrollView.content != null)
+        {
+            // Move the description text to be a child of the scroll view's content
+            entryDescriptionText.transform.SetParent(entryScrollView.content, false);
+            
+            // Set up the description text's RectTransform
+            RectTransform descRect = entryDescriptionText.GetComponent<RectTransform>();
+            if (descRect != null)
+            {
+                descRect.anchorMin = new Vector2(0, 1);
+                descRect.anchorMax = new Vector2(1, 1);
+                descRect.pivot = new Vector2(0.5f, 1);
+                descRect.anchoredPosition = new Vector2(0, -entryTitleText.GetComponent<RectTransform>().rect.height - 20);
+                descRect.sizeDelta = new Vector2(0, 0);
+                
+                // Configure the text component
+                entryDescriptionText.text = entry.description;
+                entryDescriptionText.fontSize = 16;
+                entryDescriptionText.color = Color.white;
+                entryDescriptionText.alignment = TextAlignmentOptions.Left;
+                entryDescriptionText.enableWordWrapping = true;
+                
+                // Add ContentSizeFitter to automatically adjust height
+                ContentSizeFitter sizeFitter = entryDescriptionText.gameObject.GetComponent<ContentSizeFitter>();
+                if (sizeFitter == null)
+                {
+                    sizeFitter = entryDescriptionText.gameObject.AddComponent<ContentSizeFitter>();
+                }
+                sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            }
+        }
+        else
+        {
+            Debug.LogError("EntryScrollView or its content is null!");
+        }
         
         if (!string.IsNullOrEmpty(entry.imagePath))
         {
