@@ -370,6 +370,8 @@ public class CodexPanelManager : MonoBehaviour
         }
         else
         {
+            // Show menu page before closing
+            
             // Animate panel sliding out to the right
             codexPanel.DOAnchorPosX(codexPanel.rect.width, slideDuration)
                 .SetEase(slideEase)
@@ -385,6 +387,7 @@ public class CodexPanelManager : MonoBehaviour
                     {
                         panelMovement.SetEnabled(true);
                     }
+                    ShowMenuPage();
                 });
         }
     }
@@ -557,42 +560,69 @@ public class CodexPanelManager : MonoBehaviour
 
         entryTitleText.text = entry.title;
         
-        // Move description text to be a child of the scroll view's content
-        if (entryScrollView != null && entryScrollView.content != null)
+        // Find EntryScrollView through EntryPage
+        if (entryPage != null)
         {
-            // Move the description text to be a child of the scroll view's content
-            entryDescriptionText.transform.SetParent(entryScrollView.content, false);
-            
-            // Set up the description text's RectTransform
-            RectTransform descRect = entryDescriptionText.GetComponent<RectTransform>();
-            if (descRect != null)
+            Transform entryScrollViewTransform = entryPage.transform.Find("EntryScrollView");
+            if (entryScrollViewTransform != null)
             {
-                descRect.anchorMin = new Vector2(0, 1);
-                descRect.anchorMax = new Vector2(1, 1);
-                descRect.pivot = new Vector2(0.5f, 1);
-                descRect.anchoredPosition = new Vector2(0, -entryTitleText.GetComponent<RectTransform>().rect.height - 20);
-                descRect.sizeDelta = new Vector2(0, 0);
-                
-                // Configure the text component
-                entryDescriptionText.text = entry.description;
-                entryDescriptionText.fontSize = 16;
-                entryDescriptionText.color = Color.white;
-                entryDescriptionText.alignment = TextAlignmentOptions.Left;
-                entryDescriptionText.enableWordWrapping = true;
-                
-                // Add ContentSizeFitter to automatically adjust height
-                ContentSizeFitter sizeFitter = entryDescriptionText.gameObject.GetComponent<ContentSizeFitter>();
-                if (sizeFitter == null)
+                // Find the viewport first
+                Transform viewport = entryScrollViewTransform.Find("Viewport");
+                if (viewport != null)
                 {
-                    sizeFitter = entryDescriptionText.gameObject.AddComponent<ContentSizeFitter>();
+                    // Then find the content inside the viewport
+                    Transform content = viewport.Find("Content");
+                    if (content != null)
+                    {
+                        // Get or create TextMeshProUGUI component on the content
+                        TextMeshProUGUI contentText = content.GetComponent<TextMeshProUGUI>();
+                        if (contentText == null)
+                        {
+                            contentText = content.gameObject.AddComponent<TextMeshProUGUI>();
+                        }
+                        
+                        // Configure the text component
+                        contentText.text = entry.description;
+                        contentText.fontSize = 16;
+                        contentText.color = Color.white;
+                        contentText.alignment = TextAlignmentOptions.Left;
+                        contentText.enableWordWrapping = true;
+                        
+                        // Add ContentSizeFitter to automatically adjust height
+                        ContentSizeFitter sizeFitter = content.gameObject.GetComponent<ContentSizeFitter>();
+                        if (sizeFitter == null)
+                        {
+                            sizeFitter = content.gameObject.AddComponent<ContentSizeFitter>();
+                        }
+                        sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+                        sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+                        
+                        // Set up the content's RectTransform
+                        RectTransform contentRect = content.GetComponent<RectTransform>();
+                        contentRect.anchorMin = new Vector2(0, 1);
+                        contentRect.anchorMax = new Vector2(1, 1);
+                        contentRect.pivot = new Vector2(0.5f, 1);
+                        contentRect.anchoredPosition = Vector2.zero;
+                        contentRect.sizeDelta = new Vector2(0, 0);
+                    }
+                    else
+                    {
+                        Debug.LogError("Content not found inside Viewport!");
+                    }
                 }
-                sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-                sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+                else
+                {
+                    Debug.LogError("Viewport not found in EntryScrollView!");
+                }
+            }
+            else
+            {
+                Debug.LogError("EntryScrollView not found in EntryPage!");
             }
         }
         else
         {
-            Debug.LogError("EntryScrollView or its content is null!");
+            Debug.LogError("EntryPage is null!");
         }
         
         if (!string.IsNullOrEmpty(entry.imagePath))
