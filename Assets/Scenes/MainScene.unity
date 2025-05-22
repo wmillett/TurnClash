@@ -487,8 +487,8 @@ Camera:
     height: 1
   near clip plane: 0.3
   far clip plane: 1000
-  field of view: 60
-  orthographic: 0
+  field of view: 75
+  orthographic: 1
   orthographic size: 5
   m_Depth: -1
   m_CullingMask:
@@ -1891,6 +1891,7 @@ GameObject:
   m_Component:
   - component: {fileID: 769449001}
   - component: {fileID: 769449000}
+  - component: {fileID: 769449002}
   m_Layer: 0
   m_Name: GroundManager
   m_TagString: Untagged
@@ -1913,14 +1914,14 @@ MonoBehaviour:
   tilePrefab: {fileID: 8732271784709714152, guid: 48c870a73183efdc8b5852418768b8be, type: 3}
   groundMaterials:
   - {fileID: 2100000, guid: ff65d31699df8521aac1e8d11a7c282b, type: 2}
-  gridWidth: 20
-  gridHeight: 20
+  gridWidth: 10
+  gridHeight: 10
   tileSize: 1
   tileHeight: 0.5
   mainCamera: {fileID: 330585545}
-  cameraPadding: 2
+  cameraPadding: 1
   cameraAngle: 45
-  cameraDistance: 15
+  cameraDistance: 5
 --- !u!4 &769449001
 Transform:
   m_ObjectHideFlags: 0
@@ -1936,6 +1937,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &769449002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 769448999}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db5a3929f57efa4c3b2275dc1d832b93, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  gridColor: {r: 0, g: 0, b: 0, a: 1}
+  lineWidth: 1
+  showGrid: 1
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -2625,7 +2641,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 164035655}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99953127
+  m_Size: 0.99999255
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -2944,7 +2960,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.00058021286}
+  m_AnchoredPosition: {x: 0, y: 0.000037342692}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &1360370462

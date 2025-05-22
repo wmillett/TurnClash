@@ -5,18 +5,23 @@ public class CameraMovement : MonoBehaviour
     [SerializeField] private float moveSpeed = 20f;
     [SerializeField] private float smoothTime = 0.1f;
     [SerializeField] private float speedMultiplier = 2f;
-    [SerializeField] private float minHeight = 10f;
-    [SerializeField] private float maxHeight = 30f;
+    [SerializeField] private float minZoom = 10f;
+    [SerializeField] private float maxZoom = 30f;
     [SerializeField] private float zoomSpeed = 5f;
+    [SerializeField] private float zoomSmoothTime = 0.1f;
     
     private Vector3 velocity = Vector3.zero;
+    private float zoomVelocity = 0f;
     private bool isEnabled = true;
-    private float currentHeight;
+    private float currentZoom;
     private float isometricAngle = 45f; // The Y rotation of our isometric camera
+    private Vector3 targetPosition;
+    private float cameraAngle = 30f; // The X rotation for isometric view
 
     private void Start()
     {
-        currentHeight = transform.position.y;
+        currentZoom = transform.position.y;
+        targetPosition = transform.position;
     }
 
     private void Update()
@@ -51,7 +56,7 @@ public class CameraMovement : MonoBehaviour
                 : moveSpeed;
 
             // Calculate target position
-            Vector3 targetPosition = transform.position;
+            targetPosition = transform.position;
             
             // Convert the isometric angle to radians
             float angleRad = isometricAngle * Mathf.Deg2Rad;
@@ -80,16 +85,31 @@ public class CameraMovement : MonoBehaviour
         float scroll = Input.GetAxis("Mouse ScrollWheel");
         if (scroll != 0)
         {
-            currentHeight = Mathf.Clamp(currentHeight - scroll * zoomSpeed, minHeight, maxHeight);
-            Vector3 targetPosition = transform.position;
-            targetPosition.y = currentHeight;
+            // Calculate new zoom level
+            currentZoom = Mathf.Clamp(currentZoom - scroll * zoomSpeed, minZoom, maxZoom);
             
+            // Calculate new camera position based on zoom level
+            float angleRad = cameraAngle * Mathf.Deg2Rad;
+            float height = currentZoom;
+            float distance = height / Mathf.Tan(angleRad);
+            
+            // Calculate the new position while maintaining the current X and Z
+            Vector3 newPosition = new Vector3(
+                transform.position.x,
+                height,
+                transform.position.z
+            );
+            
+            // Smoothly move to new position
             transform.position = Vector3.SmoothDamp(
                 transform.position,
-                targetPosition,
+                newPosition,
                 ref velocity,
-                smoothTime
+                zoomSmoothTime
             );
+            
+            // Update target position for movement
+            targetPosition = transform.position;
         }
     }
 
@@ -100,7 +120,7 @@ public class CameraMovement : MonoBehaviour
 
     public void ResetPosition()
     {
-        Vector3 targetPosition = new Vector3(0, currentHeight, 0);
+        targetPosition = new Vector3(0, currentZoom, 0);
         transform.position = targetPosition;
     }
 } 

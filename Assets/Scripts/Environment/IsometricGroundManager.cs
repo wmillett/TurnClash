@@ -33,11 +33,11 @@ public class IsometricGroundManager : MonoBehaviour
         if (mainCamera == null)
             mainCamera = Camera.main;
 
-        // Set up camera first
-        SetupCamera();
-        
-        // Then create ground relative to camera position
+        // Create ground first at world origin
         CreateGround();
+        
+        // Then set up camera to view the entire ground
+        SetupCamera();
     }
 
     private void ValidateSettings()
@@ -74,12 +74,11 @@ public class IsometricGroundManager : MonoBehaviour
 
     private void CreateGround()
     {
-        // Calculate grid offset relative to camera position
-        Vector3 cameraPos = mainCamera.transform.position;
+        // Calculate grid offset centered at world origin
         gridOffset = new Vector3(
-            cameraPos.x - (gridWidth * tileSize) / 2f,
+            -(gridWidth * tileSize) / 2f,
             0f,
-            cameraPos.z - (gridHeight * tileSize) / 2f
+            -(gridHeight * tileSize) / 2f
         );
 
         // Create tiles
@@ -135,19 +134,23 @@ public class IsometricGroundManager : MonoBehaviour
     {
         if (mainCamera != null)
         {
-            // Set camera position for isometric view
-            Vector3 cameraPos = new Vector3(
-                (gridWidth * tileSize) / 2f,
+            // Calculate the center of the grid
+            Vector3 gridCenter = new Vector3(
+                gridOffset.x + (gridWidth * tileSize) / 2f,
                 cameraDistance,
-                (gridHeight * tileSize) / 2f
+                gridOffset.z + (gridHeight * tileSize) / 2f
             );
             
-            mainCamera.transform.position = cameraPos;
-            mainCamera.transform.rotation = Quaternion.Euler(cameraAngle, 45f, 0f); // Added 45-degree Y rotation for true isometric view
+            // Position camera at grid center
+            mainCamera.transform.position = gridCenter;
+            mainCamera.transform.rotation = Quaternion.Euler(cameraAngle, 45f, 0f);
             
-            // Set camera to orthographic for better isometric view
+            // Set camera to orthographic
             mainCamera.orthographic = true;
-            mainCamera.orthographicSize = Mathf.Max(gridWidth, gridHeight) * tileSize * 0.5f + cameraPadding;
+            
+            // Calculate orthographic size to fit the entire grid with padding
+            float gridSize = Mathf.Max(gridWidth, gridHeight) * tileSize;
+            mainCamera.orthographicSize = (gridSize / 2f) + cameraPadding;
         }
     }
 
