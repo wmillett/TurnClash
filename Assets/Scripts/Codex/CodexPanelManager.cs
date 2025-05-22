@@ -102,7 +102,7 @@ public class CodexPanelManager : MonoBehaviour
             entryTitleText = FindChildInDescendants(entryPage.transform, "Title")?.GetComponent<TextMeshProUGUI>();
             entryDescriptionText = FindChildInDescendants(entryPage.transform, "Description")?.GetComponent<TextMeshProUGUI>();
             entryImage = FindChildInDescendants(entryPage.transform, "Image")?.GetComponent<Image>();
-
+            entryScrollView = FindChildInDescendants(entryPage.transform, "EntryScrollView")?.GetComponent<CodexScrollView>();
             // // Find or set up EntryScrollView
             // Transform entryScrollViewTransform = entryPage.transform.Find("EntryScrollView");
             // if (entryScrollViewTransform != null)
@@ -586,7 +586,6 @@ public class CodexPanelManager : MonoBehaviour
                         contentText.fontSize = 16;
                         contentText.color = Color.white;
                         contentText.alignment = TextAlignmentOptions.Left;
-                        contentText.enableWordWrapping = true;
                         
                         // Add ContentSizeFitter to automatically adjust height
                         ContentSizeFitter sizeFitter = content.gameObject.GetComponent<ContentSizeFitter>();
