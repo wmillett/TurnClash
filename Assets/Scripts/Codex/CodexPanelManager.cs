@@ -586,7 +586,7 @@ public class CodexPanelManager : MonoBehaviour
                         contentText.fontSize = 16;
                         contentText.color = Color.white;
                         contentText.alignment = TextAlignmentOptions.Left;
-                        contentText.enableWordWrapping = true;
+                        //contentText.enableWordWrapping = true;
                         
                         // Add ContentSizeFitter to automatically adjust height
                         ContentSizeFitter sizeFitter = content.gameObject.GetComponent<ContentSizeFitter>();
