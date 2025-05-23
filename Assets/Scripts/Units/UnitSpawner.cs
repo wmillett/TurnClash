@@ -108,6 +108,36 @@ public class UnitSpawner : MonoBehaviour
             Debug.LogWarning($"Spawned unit {unitObj.name} does not have a Creature component!");
         }
         
+        // Add UnitSelectable component if it doesn't exist
+        UnitSelectable selectable = unitObj.GetComponent<UnitSelectable>();
+        if (selectable == null)
+        {
+            selectable = unitObj.AddComponent<UnitSelectable>();
+        }
+        
+        // Ensure the unit has a collider for mouse interaction
+        Collider unitCollider = unitObj.GetComponent<Collider>();
+        if (unitCollider == null)
+        {
+            // Add a box collider if none exists
+            BoxCollider boxCollider = unitObj.AddComponent<BoxCollider>();
+            
+            // Try to size the collider based on the renderer bounds
+            MeshRenderer renderer = unitObj.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                boxCollider.size = renderer.bounds.size;
+                boxCollider.center = Vector3.zero;
+            }
+            else
+            {
+                // Default collider size
+                boxCollider.size = Vector3.one;
+            }
+            
+            Debug.Log($"Added BoxCollider to {unitObj.name} for selection");
+        }
+        
         // Mark position as occupied
         occupiedPositions.Add(gridPosition.Value);
         
