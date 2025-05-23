@@ -579,9 +579,10 @@ MonoBehaviour:
   moveSpeed: 15
   smoothTime: 0.1
   speedMultiplier: 10
-  minHeight: 10
-  maxHeight: 30
+  minZoom: 10
+  maxZoom: 30
   zoomSpeed: 5
+  zoomSmoothTime: 0.1
 --- !u!1 &395919920
 GameObject:
   m_ObjectHideFlags: 0
@@ -2641,7 +2642,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 164035655}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99999255
+  m_Size: 1
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -2960,7 +2961,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0.000037342692}
+  m_AnchoredPosition: {x: 0, y: 0.000040034047}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &1360370462
