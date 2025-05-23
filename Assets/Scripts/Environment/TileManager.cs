@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using TurnClash.Environment;
 
 public class TileManager : MonoBehaviour
 {

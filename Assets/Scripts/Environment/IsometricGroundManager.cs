@@ -178,6 +178,22 @@ public class IsometricGroundManager : MonoBehaviour
         );
     }
 
+    public float GetTileTopY(Vector2Int gridPosition)
+    {
+        IsometricGroundTile tile = GetTileAtPosition(gridPosition);
+        if (tile != null)
+        {
+            MeshRenderer renderer = tile.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                return renderer.bounds.max.y;
+            }
+            // Fallback: calculate based on transform
+            return tile.transform.position.y + (tile.transform.localScale.y * 0.5f);
+        }
+        return tileHeight * 0.5f; // Default fallback
+    }
+
     public void RegenerateGrid()
     {
         // Clear existing tiles

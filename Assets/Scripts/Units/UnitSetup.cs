@@ -9,15 +9,16 @@ public class Creature : MonoBehaviour
     public int maxHealth;
     public int attack;
     public int defense;
-    public bool isDefending;
 
-    private void Start()
+    protected virtual void Start()
     {
-        isDefending = false;
+        health = maxHealth;
     }
 
     public void TakeDamage(int damage)
     {
+        damage = Mathf.Max(0, damage - defense); // Defense reduces damage
+
         health -= damage;
         if (health <= 0)
         {
@@ -25,18 +26,9 @@ public class Creature : MonoBehaviour
         }
     }
 
-    public void Die()
+    public virtual void Die()
     {
         Destroy(gameObject);
     }
 
-    public void Defend()
-    {
-        isDefending = true;
-    }
-
-    public void EndTurn()
-    {
-        isDefending = false;
-    }
 }
