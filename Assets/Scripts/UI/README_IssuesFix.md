@@ -8,7 +8,7 @@
 **Root Cause**: The manager was using `DontDestroyOnLoad()` which prevented proper scene cleanup.
 
 ### 2. UI Values Not Updating
-**Problem**: Attack, health, and defense values not displaying in SelectionPanel UI.
+**Problem**: Attack, health, and defence values not displaying in SelectionPanel UI.
 
 **Root Cause**: Missing or incorrectly assigned UI component references in SelectionInfoUI.
 
@@ -155,7 +155,7 @@ If automatic setup fails, manually assign references in SelectionInfoUI:
 - **Health Text**: TextMeshPro component for health display
 - **Health Bar**: Slider component for health bar
 - **Attack Text**: TextMeshPro component for attack value
-- **Defense Text**: TextMeshPro component for defense value
+- **defence Text**: TextMeshPro component for defence value
 
 ## Verification Steps
 
@@ -169,7 +169,7 @@ After applying fixes:
    - Health bar shows unit health
    - Health text shows "X/Y" format
    - Attack shows "ATK: X"
-   - Defense shows "DEF: X"
+   - defence shows "DEF: X"
 5. **Stop playing and reload scene**
 6. **Check console** - should NOT see cleanup warnings
 

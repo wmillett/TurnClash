@@ -135,7 +135,7 @@ namespace TurnClash.UI
             
             if (defenseText == null)
             {
-                Debug.LogError("SelectionInfoUI: defenseText is null! Defense text won't update.");
+                Debug.LogError("SelectionInfoUI: defenseText is null! defence text won't update.");
                 allReferencesValid = false;
             }
             
@@ -293,7 +293,7 @@ namespace TurnClash.UI
             
             if (debugMode)
             {
-                Debug.Log($"SelectionInfoUI: Updating UI for {unit.UnitName} - HP:{unit.health}/{unit.maxHealth}, ATK:{unit.attack}, DEF:{unit.defense}");
+                Debug.Log($"SelectionInfoUI: Updating UI for {unit.UnitName} - HP:{unit.health}/{unit.maxHealth}, ATK:{unit.attack}, DEF:{unit.defence}");
             }
             
             // Update unit name - use the UnitName property instead of GameObject name
@@ -327,15 +327,15 @@ namespace TurnClash.UI
                 Debug.LogError("SelectionInfoUI: attackText is NULL! Cannot update attack stat.");
             }
             
-            // Update defense stat
+            // Update defence stat
             if (defenseText != null)
             {
-                defenseText.text = $"DEF: {unit.defense}";
-                if (debugMode) Debug.Log($"SelectionInfoUI: Set defense to 'DEF: {unit.defense}' ✓");
+                defenseText.text = $"DEF: {unit.defence}";
+                if (debugMode) Debug.Log($"SelectionInfoUI: Set defence to 'DEF: {unit.defence}' ✓");
             }
             else
             {
-                Debug.LogError("SelectionInfoUI: defenseText is NULL! Cannot update defense stat.");
+                Debug.LogError("SelectionInfoUI: defenseText is NULL! Cannot update defence stat.");
             }
         }
         

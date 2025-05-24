@@ -35,7 +35,7 @@ namespace TurnClash.UI
             // Set up instructions
             if (showInstructions && instructionsText != null)
             {
-                instructionsText.text = "Arrow Keys: Move Unit | X: End Turn";
+                instructionsText.text = "Arrow Keys: Move Unit | X: End Turn | R: Reset Game";
             }
         }
         

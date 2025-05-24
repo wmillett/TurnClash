@@ -8,7 +8,7 @@ public class Creature : MonoBehaviour
     public int health;
     public int maxHealth;
     public int attack;
-    public int defense;
+    public int defence;
 
     protected virtual void Start()
     {
@@ -17,7 +17,7 @@ public class Creature : MonoBehaviour
 
     public void TakeDamage(int damage)
     {
-        damage = Mathf.Max(0, damage - defense); // Defense reduces damage
+        damage = Mathf.Max(0, damage - defence); // defence reduces damage
 
         health -= damage;
         if (health <= 0)

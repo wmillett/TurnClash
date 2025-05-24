@@ -25,7 +25,7 @@
      - Unit Name text (top)
      - Health Bar (slider)
      - Health Text showing "35/35" format
-     - Attack and Defense stats side by side
+     - Attack and defence stats side by side
 
 5. **Clean Up:**
    - Delete the UISetup GameObject after setup
@@ -65,7 +65,7 @@ SelectionPanel
 
 ### Stats Display:
 - **Attack**: Shows unit's attack value
-- **Defense**: Shows unit's defense value
+- **defence**: Shows unit's defence value
 - **Side-by-Side Layout**: Both stats on same row to save space
 
 ---
@@ -117,7 +117,7 @@ Width: Half panel width
 Text: "ATK: --"
 ```
 
-### 5. Defense Text
+### 5. defence Text
 ```
 Type: TextMeshPro - Text (UI)
 Name: "DefenseText"
@@ -176,7 +176,7 @@ uiComponent.SetHealthBarColors(
 
 3. **Stats Display:**
    - [ ] Attack value displays correctly
-   - [ ] Defense value displays correctly
+   - [ ] defence value displays correctly
    - [ ] Both stats fit side by side
 
 4. **Functionality:**
@@ -198,7 +198,7 @@ uiComponent.SetHealthBarColors(
 - Ensure color thresholds are set correctly
 
 **Stats Not Showing:**
-- Verify unit has valid attack/defense values
+- Verify unit has valid attack/defence values
 - Check that text components are properly assigned
 - Look for null reference errors in console
 

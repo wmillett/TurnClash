@@ -17,6 +17,7 @@ public class CombatManager : MonoBehaviour
     [SerializeField] private int player2Attacks = 0;
     [SerializeField] private int totalDamageDealt = 0;
     [SerializeField] private int unitsDestroyed = 0;
+    [SerializeField] private int advanceMovements = 0; // New statistic for advance movements
     
     // Singleton instance
     private static CombatManager instance;
@@ -46,6 +47,7 @@ public class CombatManager : MonoBehaviour
     public System.Action<Unit, Unit, int> OnCombatOccurred; // attacker, defender, damage
     public System.Action<Unit, Unit> OnUnitKilled; // attacker, victim
     public System.Action<Unit.Player> OnPlayerEliminationCheck; // player that might be eliminated
+    public System.Action<Unit, Vector2Int> OnUnitAdvanced; // New event for advance movements
     
     // Combat statistics properties
     public int TotalCombats => totalCombats;
@@ -53,6 +55,7 @@ public class CombatManager : MonoBehaviour
     public int Player2Attacks => player2Attacks;
     public int TotalDamageDealt => totalDamageDealt;
     public int UnitsDestroyed => unitsDestroyed;
+    public int AdvanceMovements => advanceMovements; // New property
     
     private void Awake()
     {
@@ -109,6 +112,7 @@ public class CombatManager : MonoBehaviour
         
         unit.OnAttackPerformed += OnUnitAttackPerformed;
         unit.OnUnitDestroyed += OnUnitDestroyed;
+        unit.OnUnitAdvancedToPosition += OnUnitAdvancedToPosition;
     }
     
     /// <summary>
@@ -120,6 +124,7 @@ public class CombatManager : MonoBehaviour
         
         unit.OnAttackPerformed -= OnUnitAttackPerformed;
         unit.OnUnitDestroyed -= OnUnitDestroyed;
+        unit.OnUnitAdvancedToPosition -= OnUnitAdvancedToPosition;
     }
     
     private void OnUnitAttackPerformed(Unit attacker, Unit defender, int damage)
@@ -145,7 +150,7 @@ public class CombatManager : MonoBehaviour
             {
                 Debug.Log($"=== COMBAT ===");
                 Debug.Log($"Attacker: {attacker.UnitName} ({attacker.player}) [ATK: {attacker.attack}]");
-                Debug.Log($"Defender: {defender.UnitName} ({defender.player}) [DEF: {defender.defense}]");
+                Debug.Log($"Defender: {defender.UnitName} ({defender.player}) [DEF: {defender.defence}]");
                 Debug.Log($"Damage Dealt: {damage}");
                 Debug.Log($"Defender Health: {defender.health}/{defender.maxHealth}");
                 Debug.Log($"=============");
@@ -186,6 +191,25 @@ public class CombatManager : MonoBehaviour
         {
             Debug.Log($"Unit destroyed: {unit.UnitName} ({unit.player})");
         }
+    }
+    
+    private void OnUnitAdvancedToPosition(Unit unit, Vector2Int newPosition)
+    {
+        if (isApplicationQuitting) return;
+        
+        // Update statistics
+        if (enableCombatStatistics)
+        {
+            advanceMovements++;
+        }
+        
+        if (enableCombatLogging)
+        {
+            Debug.Log($"⚔️ {unit.UnitName} ({unit.player}) advances to position {newPosition} after successful kill!");
+        }
+        
+        // Fire event for other systems
+        OnUnitAdvanced?.Invoke(unit, newPosition);
     }
     
     private void HandleUnitKilled(Unit attacker, Unit victim)
@@ -242,7 +266,8 @@ public class CombatManager : MonoBehaviour
                $"Player 1 Attacks: {player1Attacks}\n" +
                $"Player 2 Attacks: {player2Attacks}\n" +
                $"Total Damage: {totalDamageDealt}\n" +
-               $"Units Destroyed: {unitsDestroyed}";
+               $"Units Destroyed: {unitsDestroyed}\n" +
+               $"Advance Movements: {advanceMovements}";
     }
     
     /// <summary>
@@ -257,6 +282,7 @@ public class CombatManager : MonoBehaviour
         player2Attacks = 0;
         totalDamageDealt = 0;
         unitsDestroyed = 0;
+        advanceMovements = 0;
         
         if (enableCombatLogging)
             Debug.Log("Combat statistics reset");
@@ -316,6 +342,7 @@ public class CombatManager : MonoBehaviour
         OnCombatOccurred = null;
         OnUnitKilled = null;
         OnPlayerEliminationCheck = null;
+        OnUnitAdvanced = null;
         
         // Clear singleton reference
         if (instance == this)

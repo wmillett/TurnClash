@@ -1,13 +1,13 @@
 # Combat System
 
 ## Overview
-The Combat System adds tactical combat to TurnClash where units can attack enemy units by moving into their tiles. The system follows classic turn-based RPG mechanics with attack vs defense calculations, similar to those found in [proven turn-based systems](https://pavcreations.com/turn-based-battle-and-transition-from-a-game-world-unity/).
+The Combat System adds tactical combat to TurnClash where units can attack enemy units by moving into their tiles. The system follows classic turn-based RPG mechanics with attack vs defence calculations, similar to those found in [proven turn-based systems](https://pavcreations.com/turn-based-battle-and-transition-from-a-game-world-unity/).
 
 ## How Combat Works
 
 ### Basic Combat Mechanics
 - **Attack Trigger**: Moving into an enemy unit's tile triggers an attack
-- **Damage Calculation**: `Damage = Attacker's Attack - Defender's Defense` (minimum 1 damage)
+- **Damage Calculation**: `Damage = Attacker's Attack - Defender's defence` (minimum 1 damage)
 - **Turn Integration**: Combat actions consume moves from your turn allowance
 - **Death Handling**: Units with 0 or less health are destroyed
 - **Player Elimination**: A player loses when all their units are destroyed
@@ -92,7 +92,7 @@ Combat Calculation:
 Result: P2 unit is destroyed (eliminated from game)
 ```
 
-### Example 3: High Defense
+### Example 3: High defence
 ```
 Scenario:
 - Player1 unit (ATK: 10) attacks Player2 unit (DEF: 12)
@@ -101,7 +101,7 @@ Combat Calculation:
 - Damage = 10 - 12 = -2, but minimum damage is 1
 - P2 unit takes 1 damage
 
-Result: Even high defense units take at least 1 damage
+Result: Even high defence units take at least 1 damage
 ```
 
 ## Turn System Integration
@@ -146,7 +146,7 @@ int remaining = CombatManager.Instance.GetRemainingUnitsForPlayer(Unit.Player.Pl
 ```csharp
 [Header("Combat Stats")]
 public int attack = 15;      // Damage dealt
-public int defense = 5;      // Damage reduction
+public int defence = 5;      // Damage reduction
 public int health = 100;     // Hit points
 public int maxHealth = 100;  // Maximum health
 

@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using TurnClash.Units;
 
 public class GameManager : MonoBehaviour
@@ -9,6 +10,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private UnitMovementController movementController;
     [SerializeField] private TurnManager turnManager;
     [SerializeField] private CombatManager combatManager;
+    
+    [Header("Reset Settings")]
+    [SerializeField] private bool allowReset = true;
+    [SerializeField] private KeyCode resetKey = KeyCode.R;
+    [SerializeField] private bool showResetInstructions = true;
     
     private static GameManager instance;
     
@@ -67,7 +73,14 @@ public class GameManager : MonoBehaviour
         Debug.Log("Arrow key movement is now available for selected units.");
         Debug.Log("Turn-based system is active - Player1 starts first!");
         Debug.Log("Combat system is active - move into enemy units to attack!");
-        Debug.Log("Controls: Arrow keys to move/attack, X key to end turn early");
+        
+        // Show controls including reset
+        string controls = "Controls: Arrow keys to move/attack, X key to end turn early";
+        if (allowReset && showResetInstructions)
+        {
+            controls += $", {resetKey} key to reset game";
+        }
+        Debug.Log(controls);
         
         // Subscribe to turn events for additional logging
         if (turnManager != null)
@@ -82,6 +95,16 @@ public class GameManager : MonoBehaviour
         {
             combatManager.OnPlayerEliminationCheck += OnPlayerEliminationCheck;
             combatManager.OnUnitKilled += OnUnitKilled;
+        }
+    }
+    
+    private void Update()
+    {
+        // Handle reset input
+        if (allowReset && Input.GetKeyDown(resetKey))
+        {
+            Debug.Log($"Reset key ({resetKey}) pressed - restarting game...");
+            ResetGame();
         }
     }
     
@@ -187,18 +210,37 @@ public class GameManager : MonoBehaviour
     }
     
     /// <summary>
-    /// Reset the entire game to initial state
+    /// Reset the entire game to initial state by reloading the current scene
     /// </summary>
     public void ResetGame()
     {
-        Debug.Log("Resetting game...");
+        Debug.Log("🔄 Resetting game - reloading scene...");
         
+        // Unsubscribe from events before scene reload to prevent issues
         if (turnManager != null)
-            turnManager.ResetGame();
-            
+        {
+            turnManager.OnTurnStart -= OnPlayerTurnStart;
+            turnManager.OnTurnEnd -= OnPlayerTurnEnd;
+            turnManager.OnMoveUsed -= OnPlayerMoveUsed;
+        }
+        
         if (combatManager != null)
-            combatManager.ResetStatistics();
-            
-        Debug.Log("Game reset complete!");
+        {
+            combatManager.OnPlayerEliminationCheck -= OnPlayerEliminationCheck;
+            combatManager.OnUnitKilled -= OnUnitKilled;
+        }
+        
+        // Clear selection to prevent issues during reload
+        if (UnitSelectionManager.Instance != null)
+        {
+            UnitSelectionManager.Instance.ClearSelection();
+        }
+        
+        // Get current scene name and reload it
+        string currentSceneName = SceneManager.GetActiveScene().name;
+        Debug.Log($"Reloading scene: {currentSceneName}");
+        
+        // Reload the current scene
+        SceneManager.LoadScene(currentSceneName);
     }
 } 
