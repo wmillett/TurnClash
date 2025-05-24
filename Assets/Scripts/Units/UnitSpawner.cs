@@ -13,6 +13,13 @@ public class UnitSpawner : MonoBehaviour
     [SerializeField] private int unitsPerType = 2;
     [SerializeField] private float unitHeightOffset = 0.5f; // Height above the tile
     
+    [Header("Player Colors")]
+    [SerializeField] private Color player1Color = Color.blue;
+    [SerializeField] private Color player2Color = Color.red;
+    [SerializeField] private Color player3Color = Color.green;
+    [SerializeField] private Color player4Color = Color.yellow;
+    [SerializeField] private float colorIntensity = 0.8f; // How strong the color tint is
+    
     [Header("Unit Templates")]
     [SerializeField] private UnitTemplate chillCubeTemplate;
     [SerializeField] private UnitTemplate meanBallTemplate;
@@ -84,20 +91,20 @@ public class UnitSpawner : MonoBehaviour
     
     private void SpawnUnits()
     {
-        // Spawn units of type 1 (Chill Cube)
-        for (int i = 0; i < unitsPerType; i++)
-        {
-            SpawnUnit(unitPlaceholder1Prefab, Unit.Player.Player1, chillCubeTemplate);
-        }
+        Debug.Log("UnitSpawner: Starting balanced unit spawning - each player gets one of each type");
         
-        // Spawn units of type 2 (Mean Ball)
-        for (int i = 0; i < unitsPerType; i++)
-        {
-            SpawnUnit(unitPlaceholder2Prefab, Unit.Player.Player2, meanBallTemplate);
-        }
+        // Spawn units for Player 1 (one of each type)
+        SpawnUnit(unitPlaceholder1Prefab, Unit.Player.Player1, chillCubeTemplate, player1Color, "Chill Cube");
+        SpawnUnit(unitPlaceholder2Prefab, Unit.Player.Player1, meanBallTemplate, player1Color, "Mean Ball");
+        
+        // Spawn units for Player 2 (one of each type)  
+        SpawnUnit(unitPlaceholder1Prefab, Unit.Player.Player2, chillCubeTemplate, player2Color, "Chill Cube");
+        SpawnUnit(unitPlaceholder2Prefab, Unit.Player.Player2, meanBallTemplate, player2Color, "Mean Ball");
+        
+        Debug.Log($"UnitSpawner: Spawned 4 units total - 2 per player, each player has both unit types");
     }
     
-    private void SpawnUnit(GameObject unitPrefab, Unit.Player player, UnitTemplate template)
+    private void SpawnUnit(GameObject unitPrefab, Unit.Player player, UnitTemplate template, Color playerColor, string unitTypeName)
     {
         if (unitPrefab == null)
         {
@@ -138,11 +145,11 @@ public class UnitSpawner : MonoBehaviour
             worldPosition.y = tile.transform.position.y + (tile.transform.localScale.y * 0.5f) + unitHeightOffset;
         }
         
-        // Instantiate the unit
+        // Instantiate the unit with a descriptive name
         GameObject unitObj = Instantiate(unitPrefab, worldPosition, Quaternion.identity);
-        unitObj.name = $"{template.unitName}_{player}_{occupiedPositions.Count}";
+        unitObj.name = $"{unitTypeName}_{player}_{occupiedPositions.Count}";
         
-        // Configure the Unit component with template stats (Unit extends Creature)
+        // Configure the Unit component with template stats
         Unit unit = unitObj.GetComponent<Unit>();
         if (unit == null)
         {
@@ -158,17 +165,19 @@ public class UnitSpawner : MonoBehaviour
             unit.attack = template.attack;
             unit.defense = template.defense;
             
-            // Set the unit name using the public property - with validation
-            string unitNameToSet = !string.IsNullOrEmpty(template.unitName) ? template.unitName : $"Unit_{player}";
-            unit.UnitName = unitNameToSet;
+            // Set the unit name using the unitTypeName parameter
+            unit.UnitName = unitTypeName;
             
             Debug.Log($"✅ Stats set on Unit component for {unitObj.name}: HP={unit.health}/{unit.maxHealth}, ATK={unit.attack}, DEF={unit.defense}");
-            Debug.Log($"✅ Unit name set to: '{unit.UnitName}' (from template: '{template.unitName}')");
+            Debug.Log($"✅ Unit name set to: '{unit.UnitName}'");
         }
         else
         {
             Debug.LogError($"❌ Failed to create Unit component on {unitObj.name}!");
         }
+        
+        // Apply player color to the unit
+        ApplyPlayerColor(unitObj, playerColor, player, unitTypeName);
         
         // Add UnitSelectable component if it doesn't exist
         UnitSelectable selectable = unitObj.GetComponent<UnitSelectable>();
@@ -203,7 +212,55 @@ public class UnitSpawner : MonoBehaviour
         // Mark position as occupied
         occupiedPositions.Add(gridPosition.Value);
         
-        Debug.Log($"Spawned {template.unitName} ({unitObj.name}) at grid position {gridPosition.Value} with stats: HP={template.maxHealth}, ATK={template.attack}, DEF={template.defense}");
+        Debug.Log($"Spawned {unitTypeName} ({unitObj.name}) for {player} at grid position {gridPosition.Value} with stats: HP={template.maxHealth}, ATK={template.attack}, DEF={template.defense}");
+    }
+    
+    private void ApplyPlayerColor(GameObject unitObj, Color playerColor, Unit.Player player, string unitTypeName)
+    {
+        // Get the unit's MeshRenderer
+        MeshRenderer renderer = unitObj.GetComponent<MeshRenderer>();
+        if (renderer == null)
+        {
+            Debug.LogWarning($"No MeshRenderer found on {unitObj.name}, cannot apply player color");
+            return;
+        }
+        
+        // Create a new material instance to avoid affecting the original prefab
+        Material originalMaterial = renderer.material;
+        Material playerMaterial = new Material(originalMaterial);
+        
+        // Apply player color as a tint
+        // Multiply the original color with the player color for a tinted effect
+        Color originalColor = originalMaterial.color;
+        Color tintedColor = originalColor * playerColor * colorIntensity + originalColor * (1f - colorIntensity);
+        tintedColor.a = originalColor.a; // Preserve original alpha
+        
+        playerMaterial.color = tintedColor;
+        
+        // Apply the new material
+        renderer.material = playerMaterial;
+        
+        string colorName = player == Unit.Player.Player1 ? "Blue" : "Red";
+        Debug.Log($"Applied {colorName} color to {unitTypeName} for {player}");
+    }
+    
+    // Public helper method to get player colors for other systems
+    public Color GetPlayerColor(Unit.Player player)
+    {
+        switch (player)
+        {
+            case Unit.Player.Player1:
+                return player1Color;
+            case Unit.Player.Player2:
+                return player2Color;
+            // Future-ready for when Player enum is expanded:
+            // case Unit.Player.Player3:
+            //     return player3Color;
+            // case Unit.Player.Player4:
+            //     return player4Color;
+            default:
+                return Color.white; // Default fallback color
+        }
     }
     
     private Vector2Int? GetRandomAvailablePosition()

@@ -291,7 +291,12 @@ namespace TurnClash.UI
             {
                 string displayName = !string.IsNullOrEmpty(unit.UnitName) ? unit.UnitName : "Unknown Unit";
                 unitNameText.text = displayName;
-                if (debugMode) Debug.Log($"SelectionInfoUI: Set unit name to '{displayName}' ✓");
+                
+                // Set the unit name color to match the player's color
+                Color playerColor = GetPlayerColor(unit.player);
+                unitNameText.color = playerColor;
+                
+                if (debugMode) Debug.Log($"SelectionInfoUI: Set unit name to '{displayName}' with {unit.player} color ✓");
             }
             else
             {
@@ -402,7 +407,10 @@ namespace TurnClash.UI
             if (debugMode) Debug.Log("SelectionInfoUI: Clearing unit info");
             
             if (unitNameText != null)
+            {
                 unitNameText.text = "No Unit Selected";
+                unitNameText.color = Color.white; // Reset to default color
+            }
                 
             if (healthText != null)
             {
@@ -476,6 +484,27 @@ namespace TurnClash.UI
             if (currentSelectedUnit != null)
             {
                 UpdateUnitInfo();
+            }
+        }
+        
+        private Color GetPlayerColor(Unit.Player player)
+        {
+            // Find the UnitSpawner to get player colors
+            UnitSpawner spawner = FindObjectOfType<UnitSpawner>();
+            if (spawner != null)
+            {
+                return spawner.GetPlayerColor(player);
+            }
+            
+            // Fallback colors if UnitSpawner not found (should match UnitSpawner defaults)
+            switch (player)
+            {
+                case Unit.Player.Player1:
+                    return Color.blue;
+                case Unit.Player.Player2:
+                    return Color.red;
+                default:
+                    return Color.white; // Default fallback color
             }
         }
         
