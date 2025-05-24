@@ -12,6 +12,7 @@ namespace TurnClash.Units
         [SerializeField] private bool enableArrowKeyMovement = true;
         [SerializeField] private float inputCooldown = 0.2f; // Prevent rapid movement
         [SerializeField] private bool debugMovement = true;
+        [SerializeField] private bool respectTurnSystem = true; // Whether to check turn system before allowing movement
         
         // Input timing
         private float lastInputTime;
@@ -126,24 +127,55 @@ namespace TurnClash.Units
                 return;
             }
             
+            // Check turn system restrictions
+            if (respectTurnSystem)
+            {
+                TurnManager turnManager = TurnManager.Instance;
+                if (turnManager != null && !turnManager.CanUnitMove(selectedUnit))
+                {
+                    if (debugMovement)
+                    {
+                        if (turnManager.CurrentPlayer != selectedUnit.player)
+                        {
+                            Debug.Log($"UnitMovementController: Cannot move {selectedUnit.player} unit - it's {turnManager.CurrentPlayer}'s turn");
+                        }
+                        else
+                        {
+                            Debug.Log($"UnitMovementController: Cannot move unit - no moves remaining this turn ({turnManager.CurrentMoveCount}/{turnManager.MaxMovesPerTurn})");
+                        }
+                    }
+                    return;
+                }
+            }
+            
             // Calculate target position
             Vector2Int currentPos = selectedUnit.GetGridPosition();
             Vector2Int targetPos = currentPos + direction;
             
             if (debugMovement)
             {
-                Debug.Log($"UnitMovementController: Attempting to move unit from {currentPos} to {targetPos}");
+                Debug.Log($"UnitMovementController: Attempting to move {selectedUnit.player} unit from {currentPos} to {targetPos}");
             }
             
-            // Check if the move is valid
+            // Check if the move is valid (position, collision, etc.)
             if (selectedUnit.CanMoveTo(targetPos))
             {
                 // Perform the movement
                 selectedUnit.SetGridPosition(targetPos);
                 
+                // Use a move in the turn system
+                if (respectTurnSystem)
+                {
+                    TurnManager turnManager = TurnManager.Instance;
+                    if (turnManager != null)
+                    {
+                        turnManager.UseMove(selectedUnit.player);
+                    }
+                }
+                
                 if (debugMovement)
                 {
-                    Debug.Log($"UnitMovementController: Successfully moved unit to {targetPos}");
+                    Debug.Log($"UnitMovementController: Successfully moved {selectedUnit.player} unit to {targetPos}");
                 }
             }
             else
@@ -174,12 +206,52 @@ namespace TurnClash.Units
         }
         
         /// <summary>
+        /// Enable or disable turn system integration
+        /// </summary>
+        public void SetTurnSystemRespect(bool respect)
+        {
+            respectTurnSystem = respect;
+            if (debugMovement)
+                Debug.Log($"UnitMovementController: Turn system respect {(respect ? "enabled" : "disabled")}");
+        }
+        
+        /// <summary>
         /// Manual movement method for other systems to use
         /// </summary>
         public bool TryMoveSelectedUnit(Vector2Int direction)
         {
             MoveSelectedUnit(direction);
             return true; // You could modify this to return actual success/failure
+        }
+        
+        /// <summary>
+        /// Check if the currently selected unit can move
+        /// </summary>
+        public bool CanSelectedUnitMove()
+        {
+            UnitSelectionManager selectionManager = UnitSelectionManager.Instance;
+            if (selectionManager == null || !selectionManager.HasSelection)
+                return false;
+                
+            UnitSelectable selectedUnitSelectable = selectionManager.FirstSelectedUnit;
+            if (selectedUnitSelectable == null)
+                return false;
+                
+            Unit selectedUnit = selectedUnitSelectable.GetComponent<Unit>();
+            if (selectedUnit == null)
+                return false;
+                
+            // Check turn system if enabled
+            if (respectTurnSystem)
+            {
+                TurnManager turnManager = TurnManager.Instance;
+                if (turnManager != null)
+                {
+                    return turnManager.CanUnitMove(selectedUnit);
+                }
+            }
+            
+            return true;
         }
         
         /// <summary>
