@@ -14,6 +14,7 @@ public class TurnManager : MonoBehaviour
     // Current turn state
     private Unit.Player currentPlayer;
     private int currentMoveCount;
+    private int currentTurnNumber = 1; // Track overall turn number
     private bool gameStarted = false;
     
     // Events for other systems to subscribe to
@@ -21,6 +22,7 @@ public class TurnManager : MonoBehaviour
     public System.Action<Unit.Player> OnTurnEnd;
     public System.Action<Unit.Player, int, int> OnMoveCountChanged; // player, current moves, max moves
     public System.Action<Unit.Player, int> OnMoveUsed; // player, remaining moves
+    public System.Action<int> OnTurnNumberChanged; // current turn number
     
     // Singleton instance
     private static TurnManager instance;
@@ -50,6 +52,7 @@ public class TurnManager : MonoBehaviour
     public Unit.Player CurrentPlayer => currentPlayer;
     public int CurrentMoveCount => currentMoveCount;
     public int MaxMovesPerTurn => maxMovesPerTurn;
+    public int CurrentTurnNumber => currentTurnNumber;
     public bool IsGameStarted => gameStarted;
     
     private void Awake()
@@ -100,14 +103,16 @@ public class TurnManager : MonoBehaviour
         
         currentPlayer = startingPlayer;
         currentMoveCount = 0;
+        currentTurnNumber = 1; // Reset turn counter
         gameStarted = true;
         
         if (debugTurns)
-            Debug.Log($"TurnManager: Game started! {currentPlayer} goes first.");
+            Debug.Log($"TurnManager: Game started! {currentPlayer} goes first. Turn {currentTurnNumber}");
             
         // Fire turn start event
         OnTurnStart?.Invoke(currentPlayer);
         OnMoveCountChanged?.Invoke(currentPlayer, currentMoveCount, maxMovesPerTurn);
+        OnTurnNumberChanged?.Invoke(currentTurnNumber);
     }
     
     public void UseMove(Unit.Player player)
@@ -162,12 +167,16 @@ public class TurnManager : MonoBehaviour
         currentPlayer = (currentPlayer == Unit.Player.Player1) ? Unit.Player.Player2 : Unit.Player.Player1;
         currentMoveCount = 0;
         
+        // Increment turn number when switching players
+        currentTurnNumber++;
+        
         if (debugTurns)
-            Debug.Log($"TurnManager: Turn ended. {previousPlayer} -> {currentPlayer}");
+            Debug.Log($"TurnManager: Turn ended. {previousPlayer} -> {currentPlayer}. Now Turn {currentTurnNumber}");
         
         // Fire new turn start event
         OnTurnStart?.Invoke(currentPlayer);
         OnMoveCountChanged?.Invoke(currentPlayer, currentMoveCount, maxMovesPerTurn);
+        OnTurnNumberChanged?.Invoke(currentTurnNumber);
     }
     
     public bool CanUnitMove(Unit unit)
@@ -192,7 +201,7 @@ public class TurnManager : MonoBehaviour
         if (!gameStarted)
             return "Game not started";
             
-        return $"{currentPlayer}'s Turn - Move {currentMoveCount + 1}/{maxMovesPerTurn}";
+        return $"Turn {currentTurnNumber} - {currentPlayer}'s Turn - Move {currentMoveCount + 1}/{maxMovesPerTurn}";
     }
     
     public void ResetGame()
@@ -201,6 +210,7 @@ public class TurnManager : MonoBehaviour
         
         currentPlayer = startingPlayer;
         currentMoveCount = 0;
+        currentTurnNumber = 1; // Reset turn number
         gameStarted = false;
         
         if (debugTurns)
@@ -234,6 +244,7 @@ public class TurnManager : MonoBehaviour
         OnTurnEnd = null;
         OnMoveCountChanged = null;
         OnMoveUsed = null;
+        OnTurnNumberChanged = null;
         
         // Clear singleton reference
         if (instance == this)

@@ -124,6 +124,7 @@ public class GameManager : MonoBehaviour
             turnManager.OnTurnStart += OnPlayerTurnStart;
             turnManager.OnTurnEnd += OnPlayerTurnEnd;
             turnManager.OnMoveUsed += OnPlayerMoveUsed;
+            turnManager.OnTurnNumberChanged += OnTurnNumberChanged;
         }
         
         // Subscribe to combat events for game-level responses
@@ -154,6 +155,7 @@ public class GameManager : MonoBehaviour
             turnManager.OnTurnStart -= OnPlayerTurnStart;
             turnManager.OnTurnEnd -= OnPlayerTurnEnd;
             turnManager.OnMoveUsed -= OnPlayerMoveUsed;
+            turnManager.OnTurnNumberChanged -= OnTurnNumberChanged;
         }
         
         if (combatManager != null)
@@ -184,6 +186,11 @@ public class GameManager : MonoBehaviour
     private void OnPlayerMoveUsed(Unit.Player player, int remainingMoves)
     {
         Debug.Log($"{player} has {remainingMoves} moves remaining this turn");
+    }
+    
+    private void OnTurnNumberChanged(int turnNumber)
+    {
+        Debug.Log($"🔄 Turn Number: {turnNumber}");
     }
     
     private void OnPlayerEliminationCheck(Unit.Player eliminatedPlayer)
@@ -271,6 +278,7 @@ public class GameManager : MonoBehaviour
             turnManager.OnTurnStart -= OnPlayerTurnStart;
             turnManager.OnTurnEnd -= OnPlayerTurnEnd;
             turnManager.OnMoveUsed -= OnPlayerMoveUsed;
+            turnManager.OnTurnNumberChanged -= OnTurnNumberChanged;
         }
         
         if (combatManager != null)

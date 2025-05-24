@@ -20,8 +20,11 @@ namespace TurnClash.UI
         [Header("Text Settings")]
         [SerializeField] private bool useRichText = true;
         [SerializeField] private bool showMoveCount = true;
+        [SerializeField] private bool showTurnNumber = true; // Show turn counter
         [SerializeField] private string turnTextFormat = "{0}'s Turn";
-        [SerializeField] private string turnWithMovesFormat = "{0}'s Turn\n<size=75%>Move {1}/{2}</size>";
+        [SerializeField] private string turnWithMovesFormat = "{0}'s Turn\n<size=75%>Action {1}/{2}</size>";
+        [SerializeField] private string turnWithNumberFormat = "Turn {0} - {1}'s Turn";
+        [SerializeField] private string turnWithNumberAndMovesFormat = "Turn {0} - {1}'s Turn\n<size=75%>Action {2}/{3}</size>";
         
         [Header("Auto Setup")]
         [SerializeField] private bool autoFindTurnText = true;
@@ -84,6 +87,7 @@ namespace TurnClash.UI
                     turnManager.OnTurnStart += OnTurnStart;
                     turnManager.OnTurnEnd += OnTurnEnd;
                     turnManager.OnMoveCountChanged += OnMoveCountChanged;
+                    turnManager.OnTurnNumberChanged += OnTurnNumberChanged;
                     
                     // Initialize display
                     UpdateTurnDisplay();
@@ -117,6 +121,11 @@ namespace TurnClash.UI
             UpdateTurnDisplay();
         }
         
+        private void OnTurnNumberChanged(int turnNumber)
+        {
+            UpdateTurnDisplay();
+        }
+        
         private void UpdateTurnDisplay()
         {
             if (turnText == null || turnManager == null || !turnManager.IsGameStarted)
@@ -132,17 +141,54 @@ namespace TurnClash.UI
             Unit.Player currentPlayer = turnManager.CurrentPlayer;
             Color playerColor = GetPlayerColor(currentPlayer);
             string playerName = GetPlayerDisplayName(currentPlayer);
+            int turnNumber = turnManager.CurrentTurnNumber;
             
             string displayText;
             
-            if (showMoveCount)
+            // Determine which format to use based on settings
+            if (showTurnNumber && showMoveCount)
             {
+                // Show both turn number and move count
                 int currentMove = turnManager.CurrentMoveCount + 1; // Show as 1-indexed
                 int maxMoves = turnManager.MaxMovesPerTurn;
                 
                 if (useRichText)
                 {
-                    // Use rich text with color formatting
+                    string colorHex = ColorUtility.ToHtmlStringRGBA(playerColor);
+                    displayText = string.Format(turnWithNumberAndMovesFormat, 
+                        turnNumber,
+                        $"<color=#{colorHex}>{playerName}</color>", 
+                        currentMove, 
+                        maxMoves);
+                }
+                else
+                {
+                    displayText = string.Format(turnWithNumberAndMovesFormat, turnNumber, playerName, currentMove, maxMoves);
+                }
+            }
+            else if (showTurnNumber)
+            {
+                // Show turn number but not move count
+                if (useRichText)
+                {
+                    string colorHex = ColorUtility.ToHtmlStringRGBA(playerColor);
+                    displayText = string.Format(turnWithNumberFormat, 
+                        turnNumber,
+                        $"<color=#{colorHex}>{playerName}</color>");
+                }
+                else
+                {
+                    displayText = string.Format(turnWithNumberFormat, turnNumber, playerName);
+                }
+            }
+            else if (showMoveCount)
+            {
+                // Show move count but not turn number (original behavior)
+                int currentMove = turnManager.CurrentMoveCount + 1; // Show as 1-indexed
+                int maxMoves = turnManager.MaxMovesPerTurn;
+                
+                if (useRichText)
+                {
                     string colorHex = ColorUtility.ToHtmlStringRGBA(playerColor);
                     displayText = string.Format(turnWithMovesFormat, 
                         $"<color=#{colorHex}>{playerName}</color>", 
@@ -156,9 +202,9 @@ namespace TurnClash.UI
             }
             else
             {
+                // Show only player name (original simple format)
                 if (useRichText)
                 {
-                    // Use rich text with color formatting
                     string colorHex = ColorUtility.ToHtmlStringRGBA(playerColor);
                     displayText = string.Format(turnTextFormat, $"<color=#{colorHex}>{playerName}</color>");
                 }
@@ -237,6 +283,15 @@ namespace TurnClash.UI
         }
         
         /// <summary>
+        /// Toggle turn number display
+        /// </summary>
+        public void SetShowTurnNumber(bool show)
+        {
+            showTurnNumber = show;
+            UpdateTurnDisplay();
+        }
+        
+        /// <summary>
         /// Force update the display (useful for testing)
         /// </summary>
         [ContextMenu("Update Display")]
@@ -253,6 +308,7 @@ namespace TurnClash.UI
                 turnManager.OnTurnStart -= OnTurnStart;
                 turnManager.OnTurnEnd -= OnTurnEnd;
                 turnManager.OnMoveCountChanged -= OnMoveCountChanged;
+                turnManager.OnTurnNumberChanged -= OnTurnNumberChanged;
             }
         }
     }
