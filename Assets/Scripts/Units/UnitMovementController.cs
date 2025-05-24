@@ -14,6 +14,10 @@ namespace TurnClash.Units
         [SerializeField] private bool debugMovement = true;
         [SerializeField] private bool respectTurnSystem = true; // Whether to check turn system before allowing movement
         
+        [Header("Combat Settings")]
+        [SerializeField] private bool enableCombat = true; // Allow combat when moving to enemy tiles
+        [SerializeField] private bool showCombatPreview = true; // Show damage preview in debug
+        
         // Input timing
         private float lastInputTime;
         private bool[] keyPressed = new bool[4]; // Up, Down, Left, Right
@@ -21,14 +25,19 @@ namespace TurnClash.Units
         
         // Singleton instance
         private static UnitMovementController instance;
+        private static bool isApplicationQuitting = false;
+        
         public static UnitMovementController Instance
         {
             get
             {
+                if (isApplicationQuitting)
+                    return null;
+                    
                 if (instance == null)
                 {
                     instance = FindObjectOfType<UnitMovementController>();
-                    if (instance == null)
+                    if (instance == null && !isApplicationQuitting)
                     {
                         GameObject go = new GameObject("UnitMovementController");
                         instance = go.AddComponent<UnitMovementController>();
@@ -49,14 +58,22 @@ namespace TurnClash.Units
             }
             
             instance = this;
+            isApplicationQuitting = false;
         }
         
         private void Update()
         {
-            if (!enableArrowKeyMovement)
+            if (!enableArrowKeyMovement || isApplicationQuitting)
                 return;
                 
             HandleArrowKeyInput();
+        }
+        
+        private void OnApplicationQuit()
+        {
+            isApplicationQuitting = true;
+            if (debugMovement)
+                Debug.Log("UnitMovementController: Application quitting, preventing new instance creation");
         }
         
         private void HandleArrowKeyInput()
@@ -100,6 +117,8 @@ namespace TurnClash.Units
         
         private void MoveSelectedUnit(Vector2Int direction)
         {
+            if (isApplicationQuitting) return;
+            
             // Get the currently selected unit
             UnitSelectionManager selectionManager = UnitSelectionManager.Instance;
             
@@ -152,17 +171,49 @@ namespace TurnClash.Units
             Vector2Int currentPos = selectedUnit.GetGridPosition();
             Vector2Int targetPos = currentPos + direction;
             
-            if (debugMovement)
+            // Check if there's an enemy at the target position (for combat)
+            Unit enemyAtTarget = null;
+            if (enableCombat)
             {
-                Debug.Log($"UnitMovementController: Attempting to move {selectedUnit.player} unit from {currentPos} to {targetPos}");
+                enemyAtTarget = selectedUnit.GetEnemyAtPosition(targetPos);
             }
             
-            // Check if the move is valid (position, collision, etc.)
-            if (selectedUnit.CanMoveTo(targetPos))
+            if (debugMovement)
             {
-                // Perform the movement
-                selectedUnit.SetGridPosition(targetPos);
-                
+                if (enemyAtTarget != null)
+                {
+                    Debug.Log($"UnitMovementController: {selectedUnit.player} unit will attack {enemyAtTarget.UnitName} at {targetPos}");
+                    if (showCombatPreview)
+                    {
+                        Debug.Log($"Combat Preview: {selectedUnit.GetCombatPreview(enemyAtTarget)}");
+                    }
+                }
+                else
+                {
+                    Debug.Log($"UnitMovementController: Attempting to move {selectedUnit.player} unit from {currentPos} to {targetPos}");
+                }
+            }
+            
+            // Try to move/attack using the enhanced movement method
+            bool actionSuccessful = false;
+            
+            if (enableCombat)
+            {
+                // Use the new TryMoveToPosition method that handles both movement and combat
+                actionSuccessful = selectedUnit.TryMoveToPosition(targetPos);
+            }
+            else
+            {
+                // Use old movement system (combat disabled)
+                if (selectedUnit.CanMoveTo(targetPos))
+                {
+                    selectedUnit.SetGridPosition(targetPos);
+                    actionSuccessful = true;
+                }
+            }
+            
+            if (actionSuccessful)
+            {
                 // Use a move in the turn system
                 if (respectTurnSystem)
                 {
@@ -175,14 +226,21 @@ namespace TurnClash.Units
                 
                 if (debugMovement)
                 {
-                    Debug.Log($"UnitMovementController: Successfully moved {selectedUnit.player} unit to {targetPos}");
+                    if (enemyAtTarget != null)
+                    {
+                        Debug.Log($"UnitMovementController: Combat completed - {selectedUnit.UnitName} attacked {enemyAtTarget.UnitName}");
+                    }
+                    else
+                    {
+                        Debug.Log($"UnitMovementController: Successfully moved {selectedUnit.player} unit to {targetPos}");
+                    }
                 }
             }
             else
             {
                 if (debugMovement)
                 {
-                    Debug.Log($"UnitMovementController: Cannot move to {targetPos} - invalid position");
+                    Debug.Log($"UnitMovementController: Action failed - cannot move/attack at {targetPos}");
                 }
             }
         }
@@ -216,19 +274,33 @@ namespace TurnClash.Units
         }
         
         /// <summary>
+        /// Enable or disable combat system
+        /// </summary>
+        public void SetCombatEnabled(bool enabled)
+        {
+            enableCombat = enabled;
+            if (debugMovement)
+                Debug.Log($"UnitMovementController: Combat system {(enabled ? "enabled" : "disabled")}");
+        }
+        
+        /// <summary>
         /// Manual movement method for other systems to use
         /// </summary>
         public bool TryMoveSelectedUnit(Vector2Int direction)
         {
+            if (isApplicationQuitting) return false;
+            
             MoveSelectedUnit(direction);
             return true; // You could modify this to return actual success/failure
         }
         
         /// <summary>
-        /// Check if the currently selected unit can move
+        /// Check if the currently selected unit can move or attack
         /// </summary>
         public bool CanSelectedUnitMove()
         {
+            if (isApplicationQuitting) return false;
+            
             UnitSelectionManager selectionManager = UnitSelectionManager.Instance;
             if (selectionManager == null || !selectionManager.HasSelection)
                 return false;
@@ -255,11 +327,48 @@ namespace TurnClash.Units
         }
         
         /// <summary>
+        /// Get information about what would happen if the selected unit moved in a direction
+        /// </summary>
+        public string GetMovePreview(Vector2Int direction)
+        {
+            if (isApplicationQuitting) return "Application quitting";
+            
+            UnitSelectionManager selectionManager = UnitSelectionManager.Instance;
+            if (selectionManager == null || !selectionManager.HasSelection)
+                return "No unit selected";
+                
+            UnitSelectable selectedUnitSelectable = selectionManager.FirstSelectedUnit;
+            if (selectedUnitSelectable == null)
+                return "No unit selected";
+                
+            Unit selectedUnit = selectedUnitSelectable.GetComponent<Unit>();
+            if (selectedUnit == null)
+                return "Invalid unit";
+                
+            Vector2Int currentPos = selectedUnit.GetGridPosition();
+            Vector2Int targetPos = currentPos + direction;
+            
+            Unit enemyAtTarget = selectedUnit.GetEnemyAtPosition(targetPos);
+            if (enemyAtTarget != null)
+            {
+                return selectedUnit.GetCombatPreview(enemyAtTarget);
+            }
+            else if (selectedUnit.CanMoveTo(targetPos))
+            {
+                return $"Move to {targetPos}";
+            }
+            else
+            {
+                return "Cannot move there";
+            }
+        }
+        
+        /// <summary>
         /// Get movement direction based on arrow key input (for external use)
         /// </summary>
         public Vector2Int GetMovementInput()
         {
-            if (!enableArrowKeyMovement)
+            if (!enableArrowKeyMovement || isApplicationQuitting)
                 return Vector2Int.zero;
                 
             Vector2Int direction = Vector2Int.zero;
@@ -275,6 +384,20 @@ namespace TurnClash.Units
                 direction.x = 1;
                 
             return direction;
+        }
+        
+        private void OnDestroy()
+        {
+            if (debugMovement)
+                Debug.Log("UnitMovementController: OnDestroy called");
+                
+            // Clear singleton reference
+            if (instance == this)
+            {
+                instance = null;
+            }
+            
+            isApplicationQuitting = true;
         }
     }
 } 

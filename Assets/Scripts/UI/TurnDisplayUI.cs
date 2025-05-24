@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using TurnClash.Units;
+using System.Collections;
 
 namespace TurnClash.UI
 {
@@ -28,33 +29,51 @@ namespace TurnClash.UI
         
         private void Start()
         {
-            // Find turn manager
-            if (autoFindTurnManager)
-            {
-                turnManager = TurnManager.Instance;
-            }
-            
-            if (turnManager != null)
-            {
-                // Subscribe to turn events
-                turnManager.OnTurnStart += OnTurnStart;
-                turnManager.OnTurnEnd += OnTurnEnd;
-                turnManager.OnMoveCountChanged += OnMoveCountChanged;
-                turnManager.OnMoveUsed += OnMoveUsed;
-                
-                // Initialize display
-                UpdateDisplay();
-            }
-            else
-            {
-                Debug.LogWarning("TurnDisplayUI: No TurnManager found!");
-            }
+            // Start coroutine to wait for TurnManager to be ready
+            StartCoroutine(WaitForTurnManagerAndSubscribe());
             
             // Set up instructions
             if (showInstructions && instructionsText != null)
             {
                 instructionsText.text = "Arrow Keys: Move Unit | X: End Turn";
             }
+        }
+        
+        private System.Collections.IEnumerator WaitForTurnManagerAndSubscribe()
+        {
+            // Wait up to 5 seconds for TurnManager to be ready
+            float timeout = 5f;
+            float elapsed = 0f;
+            
+            while (elapsed < timeout)
+            {
+                // Find turn manager
+                if (autoFindTurnManager)
+                {
+                    turnManager = TurnManager.Instance;
+                }
+                
+                if (turnManager != null)
+                {
+                    // Subscribe to turn events
+                    turnManager.OnTurnStart += OnTurnStart;
+                    turnManager.OnTurnEnd += OnTurnEnd;
+                    turnManager.OnMoveCountChanged += OnMoveCountChanged;
+                    turnManager.OnMoveUsed += OnMoveUsed;
+                    
+                    // Initialize display
+                    UpdateDisplay();
+                    Debug.Log("TurnDisplayUI: Successfully subscribed to turn events");
+                    yield break; // Exit the coroutine
+                }
+                
+                // Wait a frame and try again
+                yield return null;
+                elapsed += Time.deltaTime;
+            }
+            
+            // If we reach here, we timed out
+            Debug.LogWarning("TurnDisplayUI: Timeout waiting for TurnManager.Instance! Events not subscribed.");
         }
         
         private void OnDestroy()
@@ -107,7 +126,7 @@ namespace TurnClash.UI
             // Update moves remaining text
             if (movesRemainingText != null)
             {
-                movesRemainingText.text = $"Moves: {turnManager.RemainingMoves}/{turnManager.MaxMovesPerTurn}";
+                movesRemainingText.text = $"Moves: {turnManager.GetRemainingMoves()}/{turnManager.MaxMovesPerTurn}";
             }
             
             // Update combined turn info text

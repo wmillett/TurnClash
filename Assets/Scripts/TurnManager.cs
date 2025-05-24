@@ -24,14 +24,19 @@ public class TurnManager : MonoBehaviour
     
     // Singleton instance
     private static TurnManager instance;
+    private static bool isApplicationQuitting = false;
+    
     public static TurnManager Instance
     {
         get
         {
+            if (isApplicationQuitting)
+                return null;
+                
             if (instance == null)
             {
                 instance = FindObjectOfType<TurnManager>();
-                if (instance == null)
+                if (instance == null && !isApplicationQuitting)
                 {
                     GameObject go = new GameObject("TurnManager");
                     instance = go.AddComponent<TurnManager>();
@@ -45,7 +50,6 @@ public class TurnManager : MonoBehaviour
     public Unit.Player CurrentPlayer => currentPlayer;
     public int CurrentMoveCount => currentMoveCount;
     public int MaxMovesPerTurn => maxMovesPerTurn;
-    public int RemainingMoves => maxMovesPerTurn - currentMoveCount;
     public bool IsGameStarted => gameStarted;
     
     private void Awake()
@@ -59,81 +63,69 @@ public class TurnManager : MonoBehaviour
         }
         
         instance = this;
+        isApplicationQuitting = false;
     }
     
     private void Start()
     {
-        InitializeTurnSystem();
+        StartGame();
     }
     
     private void Update()
     {
-        // Check for early turn end (X key)
-        if (gameStarted && Input.GetKeyDown(KeyCode.X))
+        if (isApplicationQuitting || !gameStarted)
+            return;
+            
+        // Check for early turn end input (X key)
+        if (Input.GetKeyDown(KeyCode.X))
         {
             EndTurnEarly();
         }
     }
     
-    private void InitializeTurnSystem()
+    private void OnApplicationQuit()
     {
+        isApplicationQuitting = true;
+        if (debugTurns)
+            Debug.Log("TurnManager: Application quitting, preventing new instance creation");
+    }
+    
+    public void StartGame()
+    {
+        if (isApplicationQuitting) return;
+        
         currentPlayer = startingPlayer;
         currentMoveCount = 0;
         gameStarted = true;
         
         if (debugTurns)
-        {
-            Debug.Log($"TurnManager: Game started! {currentPlayer}'s turn begins.");
-        }
-        
-        // Notify systems that the first turn has started
+            Debug.Log($"TurnManager: Game started! {currentPlayer} goes first.");
+            
+        // Fire turn start event
         OnTurnStart?.Invoke(currentPlayer);
         OnMoveCountChanged?.Invoke(currentPlayer, currentMoveCount, maxMovesPerTurn);
     }
     
-    /// <summary>
-    /// Check if the specified player can make a move
-    /// </summary>
-    public bool CanPlayerMove(Unit.Player player)
+    public void UseMove(Unit.Player player)
     {
-        if (!gameStarted)
-            return false;
-            
-        return player == currentPlayer && currentMoveCount < maxMovesPerTurn;
-    }
-    
-    /// <summary>
-    /// Check if a specific unit can move based on current turn rules
-    /// </summary>
-    public bool CanUnitMove(Unit unit)
-    {
-        if (unit == null || !gameStarted)
-            return false;
-            
-        return CanPlayerMove(unit.player);
-    }
-    
-    /// <summary>
-    /// Use a move for the current player
-    /// </summary>
-    public bool UseMove(Unit.Player player)
-    {
-        if (!CanPlayerMove(player))
+        if (isApplicationQuitting || !gameStarted) return;
+        
+        // Verify it's the correct player's turn
+        if (player != currentPlayer)
         {
             if (debugTurns)
-                Debug.Log($"TurnManager: {player} cannot make a move (current player: {currentPlayer}, moves: {currentMoveCount}/{maxMovesPerTurn})");
-            return false;
+                Debug.LogWarning($"TurnManager: {player} tried to use a move, but it's {currentPlayer}'s turn!");
+            return;
         }
         
+        // Increment move count
         currentMoveCount++;
         
         if (debugTurns)
-        {
             Debug.Log($"TurnManager: {player} used move {currentMoveCount}/{maxMovesPerTurn}");
-        }
         
-        // Notify systems about move usage
-        OnMoveUsed?.Invoke(currentPlayer, RemainingMoves);
+        // Fire move used event
+        OnMoveUsed?.Invoke(currentPlayer, maxMovesPerTurn - currentMoveCount);
         OnMoveCountChanged?.Invoke(currentPlayer, currentMoveCount, maxMovesPerTurn);
         
         // Check if turn should end
@@ -141,96 +133,110 @@ public class TurnManager : MonoBehaviour
         {
             EndTurn();
         }
-        
-        return true;
     }
     
-    /// <summary>
-    /// End the current turn and switch to the next player
-    /// </summary>
-    public void EndTurn()
+    public void EndTurnEarly()
     {
-        if (!gameStarted)
-            return;
+        if (isApplicationQuitting || !gameStarted) return;
+        
+        if (debugTurns)
+            Debug.Log($"TurnManager: {currentPlayer} ended their turn early ({currentMoveCount}/{maxMovesPerTurn} moves used)");
             
+        EndTurn();
+    }
+    
+    private void EndTurn()
+    {
+        if (isApplicationQuitting || !gameStarted) return;
+        
         Unit.Player previousPlayer = currentPlayer;
         
-        // Notify about turn ending
-        OnTurnEnd?.Invoke(previousPlayer);
+        // Fire turn end event
+        OnTurnEnd?.Invoke(currentPlayer);
         
-        // Switch to next player
+        // Switch to other player
         currentPlayer = (currentPlayer == Unit.Player.Player1) ? Unit.Player.Player2 : Unit.Player.Player1;
         currentMoveCount = 0;
         
         if (debugTurns)
-        {
-            Debug.Log($"TurnManager: {previousPlayer}'s turn ended. {currentPlayer}'s turn begins.");
-        }
+            Debug.Log($"TurnManager: Turn ended. {previousPlayer} -> {currentPlayer}");
         
-        // Notify about new turn starting
+        // Fire new turn start event
         OnTurnStart?.Invoke(currentPlayer);
         OnMoveCountChanged?.Invoke(currentPlayer, currentMoveCount, maxMovesPerTurn);
     }
     
-    /// <summary>
-    /// End the current turn early (called when X key is pressed)
-    /// </summary>
-    public void EndTurnEarly()
+    public bool CanUnitMove(Unit unit)
     {
-        if (!gameStarted)
-            return;
+        if (isApplicationQuitting || !gameStarted || unit == null) return false;
+        
+        // Check if it's this player's turn
+        if (unit.player != currentPlayer)
+            return false;
             
-        if (debugTurns)
-        {
-            Debug.Log($"TurnManager: {currentPlayer} ended their turn early ({currentMoveCount}/{maxMovesPerTurn} moves used)");
-        }
-        
-        EndTurn();
+        // Check if player has moves remaining
+        return currentMoveCount < maxMovesPerTurn;
     }
     
-    /// <summary>
-    /// Reset the game to initial state
-    /// </summary>
-    public void ResetGame()
+    public int GetRemainingMoves()
     {
-        currentPlayer = startingPlayer;
-        currentMoveCount = 0;
-        gameStarted = true;
-        
-        if (debugTurns)
-        {
-            Debug.Log($"TurnManager: Game reset. {currentPlayer}'s turn begins.");
-        }
-        
-        OnTurnStart?.Invoke(currentPlayer);
-        OnMoveCountChanged?.Invoke(currentPlayer, currentMoveCount, maxMovesPerTurn);
+        return Mathf.Max(0, maxMovesPerTurn - currentMoveCount);
     }
     
-    /// <summary>
-    /// Get turn information as a formatted string
-    /// </summary>
     public string GetTurnInfo()
     {
         if (!gameStarted)
             return "Game not started";
             
-        return $"{currentPlayer} - Move {currentMoveCount + 1}/{maxMovesPerTurn}";
+        return $"{currentPlayer}'s Turn - Move {currentMoveCount + 1}/{maxMovesPerTurn}";
     }
     
-    /// <summary>
-    /// Set maximum moves per turn (for game configuration)
-    /// </summary>
-    public void SetMaxMovesPerTurn(int maxMoves)
+    public void ResetGame()
     {
-        maxMovesPerTurn = Mathf.Max(1, maxMoves);
-        OnMoveCountChanged?.Invoke(currentPlayer, currentMoveCount, maxMovesPerTurn);
+        if (isApplicationQuitting) return;
+        
+        currentPlayer = startingPlayer;
+        currentMoveCount = 0;
+        gameStarted = false;
+        
+        if (debugTurns)
+            Debug.Log("TurnManager: Game reset");
+            
+        // Restart the game
+        StartGame();
     }
     
-    /// <summary>
-    /// Enable or disable debug logging
-    /// </summary>
-    public void SetDebugMode(bool enabled)
+    public void SetMaxMovesPerTurn(int moves)
     {
-        debugTurns = enabled;
+        maxMovesPerTurn = Mathf.Max(1, moves);
+        if (debugTurns)
+            Debug.Log($"TurnManager: Max moves per turn set to {maxMovesPerTurn}");
+    }
+    
+    public void SetStartingPlayer(Unit.Player player)
+    {
+        startingPlayer = player;
+        if (debugTurns)
+            Debug.Log($"TurnManager: Starting player set to {startingPlayer}");
+    }
+    
+    private void OnDestroy()
+    {
+        if (debugTurns)
+            Debug.Log("TurnManager: OnDestroy called");
+            
+        // Clear all event subscriptions
+        OnTurnStart = null;
+        OnTurnEnd = null;
+        OnMoveCountChanged = null;
+        OnMoveUsed = null;
+        
+        // Clear singleton reference
+        if (instance == this)
+        {
+            instance = null;
+        }
+        
+        isApplicationQuitting = true;
     }
 } 

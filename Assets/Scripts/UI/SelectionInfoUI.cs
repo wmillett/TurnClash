@@ -37,26 +37,10 @@ namespace TurnClash.UI
         
         private void Start()
         {
-            Debug.Log("SelectionInfoUI: Start() called");
-            LogUIReferenceStatus("START");
+            LogUIReferenceStatus("START OF START");
             
-            if (debugMode)
-            {
-                Debug.Log("SelectionInfoUI: Starting up...");
-                LogUIReferences();
-            }
-            
-            // Subscribe to selection events
-            if (UnitSelectionManager.Instance != null)
-            {
-                UnitSelectionManager.Instance.OnUnitSelected += OnUnitSelected;
-                UnitSelectionManager.Instance.OnSelectionCleared += OnSelectionCleared;
-                Debug.Log("SelectionInfoUI: Successfully subscribed to selection events");
-            }
-            else
-            {
-                Debug.LogError("SelectionInfoUI: UnitSelectionManager.Instance is null! Events not subscribed.");
-            }
+            // Start coroutine to wait for UnitSelectionManager to be ready
+            StartCoroutine(WaitForSelectionManagerAndSubscribe());
             
             // Initially hide the panel
             if (hideWhenNoSelection && selectionPanel != null)
@@ -76,6 +60,32 @@ namespace TurnClash.UI
             }
             
             LogUIReferenceStatus("END OF START");
+        }
+        
+        private System.Collections.IEnumerator WaitForSelectionManagerAndSubscribe()
+        {
+            // Wait up to 5 seconds for UnitSelectionManager to be ready
+            float timeout = 5f;
+            float elapsed = 0f;
+            
+            while (elapsed < timeout)
+            {
+                if (UnitSelectionManager.Instance != null)
+                {
+                    // Successfully found the manager, subscribe to events
+                    UnitSelectionManager.Instance.OnUnitSelected += OnUnitSelected;
+                    UnitSelectionManager.Instance.OnSelectionCleared += OnSelectionCleared;
+                    Debug.Log("SelectionInfoUI: Successfully subscribed to selection events");
+                    yield break; // Exit the coroutine
+                }
+                
+                // Wait a frame and try again
+                yield return null;
+                elapsed += Time.deltaTime;
+            }
+            
+            // If we reach here, we timed out
+            Debug.LogError("SelectionInfoUI: Timeout waiting for UnitSelectionManager.Instance! Events not subscribed.");
         }
         
         private void LogUIReferences()

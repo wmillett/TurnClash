@@ -14,14 +14,22 @@ namespace TurnClash.Units
         
         // Singleton instance
         private static UnitSelectionManager instance;
+        private static bool isApplicationQuitting = false; // Prevent creation during shutdown
+        
         public static UnitSelectionManager Instance
         {
             get
             {
+                // Don't create new instances during application quit or scene unload
+                if (isApplicationQuitting)
+                {
+                    return null;
+                }
+                
                 if (instance == null)
                 {
                     instance = FindObjectOfType<UnitSelectionManager>();
-                    if (instance == null)
+                    if (instance == null && !isApplicationQuitting)
                     {
                         GameObject go = new GameObject("UnitSelectionManager");
                         instance = go.AddComponent<UnitSelectionManager>();
@@ -59,15 +67,22 @@ namespace TurnClash.Units
             }
             
             instance = this;
+            isApplicationQuitting = false; // Reset the flag when awaking
             Debug.Log("UnitSelectionManager: Instance created");
-            // Removed DontDestroyOnLoad to allow proper scene cleanup
-            // DontDestroyOnLoad(gameObject);
+        }
+        
+        private void OnApplicationQuit()
+        {
+            // Prevent any new singleton creation during quit
+            isApplicationQuitting = true;
+            if (debugSelection)
+                Debug.Log("UnitSelectionManager: Application quitting, preventing new instance creation");
         }
         
         private void OnApplicationFocus(bool hasFocus)
         {
-            // Clean up when losing focus
-            if (!hasFocus)
+            // Clean up when losing focus (but not during quit)
+            if (!hasFocus && !isApplicationQuitting)
             {
                 if (debugSelection)
                     Debug.Log("UnitSelectionManager: Application lost focus, clearing selections");
@@ -77,6 +92,10 @@ namespace TurnClash.Units
         
         private void Update()
         {
+            // Don't process input during application quit
+            if (isApplicationQuitting)
+                return;
+                
             // Handle input for clearing selection
             if (Input.GetMouseButtonDown(0))
             {
@@ -104,7 +123,7 @@ namespace TurnClash.Units
         
         public void SelectUnit(UnitSelectable unit)
         {
-            if (unit == null) return;
+            if (unit == null || isApplicationQuitting) return;
             
             bool isMultiSelect = allowMultipleSelection && Input.GetKey(multiSelectKey);
             
@@ -146,7 +165,7 @@ namespace TurnClash.Units
         
         public void DeselectUnit(UnitSelectable unit)
         {
-            if (unit == null || !selectedUnits.Contains(unit)) return;
+            if (unit == null || !selectedUnits.Contains(unit) || isApplicationQuitting) return;
             
             selectedUnits.Remove(unit);
             
@@ -181,12 +200,12 @@ namespace TurnClash.Units
                 if (unit != null)
                 {
                     unit.Deselect();
-                    if (triggerEvents)
+                    if (triggerEvents && !isApplicationQuitting)
                         OnUnitDeselected?.Invoke(unit);
                 }
             }
             
-            if (triggerEvents)
+            if (triggerEvents && !isApplicationQuitting)
             {
                 OnSelectionCleared?.Invoke();
                 OnSelectionChanged?.Invoke(SelectedUnits);
@@ -198,7 +217,7 @@ namespace TurnClash.Units
         
         public void ToggleUnitSelection(UnitSelectable unit)
         {
-            if (unit == null) return;
+            if (unit == null || isApplicationQuitting) return;
             
             if (IsUnitSelected(unit))
             {
@@ -217,11 +236,14 @@ namespace TurnClash.Units
         
         public List<UnitSelectable> GetSelectedUnitsOfPlayer(Unit.Player player)
         {
+            if (isApplicationQuitting) return new List<UnitSelectable>();
             return selectedUnits.Where(unit => unit.GetUnit()?.player == player).ToList();
         }
         
         public void SelectUnitsOfPlayer(Unit.Player player)
         {
+            if (isApplicationQuitting) return;
+            
             var playerUnits = FindObjectsOfType<UnitSelectable>()
                 .Where(unit => unit.GetUnit().player == player)
                 .ToList();
@@ -247,6 +269,8 @@ namespace TurnClash.Units
         
         private void CheckForEmptySpaceClick()
         {
+            if (isApplicationQuitting) return;
+            
             // Cast a ray from camera to see what we hit
             Camera cam = Camera.main;
             if (cam == null) return;
@@ -286,18 +310,30 @@ namespace TurnClash.Units
             if (debugSelection)
                 Debug.Log("UnitSelectionManager: OnDestroy called");
                 
-            // Clear all selections before destroying
-            ClearSelection(false); // Don't trigger events during cleanup
+            // Clear all selections before destroying (don't trigger events during cleanup)
+            ClearSelection(false);
             
+            // Clear all event subscriptions to prevent memory leaks
+            OnUnitSelected = null;
+            OnUnitDeselected = null;
+            OnSelectionChanged = null;
+            OnSelectionCleared = null;
+            
+            // Clear singleton reference if this is the active instance
             if (instance == this)
             {
                 instance = null;
             }
+            
+            // Mark as quitting to prevent recreation
+            isApplicationQuitting = true;
         }
         
         // Add method to validate and clean up null units
         private void CleanupNullUnits()
         {
+            if (isApplicationQuitting) return;
+            
             if (selectedUnits.RemoveAll(unit => unit == null) > 0)
             {
                 if (debugSelection)
@@ -318,7 +354,10 @@ namespace TurnClash.Units
         // Call this periodically or when accessing selected units
         public void ValidateSelection()
         {
-            CleanupNullUnits();
+            if (!isApplicationQuitting)
+            {
+                CleanupNullUnits();
+            }
         }
     }
 } 

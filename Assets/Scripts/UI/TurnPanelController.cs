@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using TurnClash.Units;
+using System.Collections;
 
 namespace TurnClash.UI
 {
@@ -45,23 +46,10 @@ namespace TurnClash.UI
                 }
             }
             
-            // Auto-find TurnManager
-            if (autoFindTurnManager)
-            {
-                turnManager = TurnManager.Instance;
-            }
-            
-            // Validate setup
+            // Validate TurnText setup
             if (turnText == null)
             {
                 Debug.LogError("TurnPanelController: No TurnText found! Please assign the TextMeshProUGUI component.");
-                enabled = false;
-                return;
-            }
-            
-            if (turnManager == null)
-            {
-                Debug.LogError("TurnPanelController: No TurnManager found!");
                 enabled = false;
                 return;
             }
@@ -72,26 +60,46 @@ namespace TurnClash.UI
                 turnText.richText = true;
             }
             
-            // Subscribe to turn events
-            turnManager.OnTurnStart += OnTurnStart;
-            turnManager.OnTurnEnd += OnTurnEnd;
-            turnManager.OnMoveCountChanged += OnMoveCountChanged;
-            
-            // Initialize display
-            UpdateTurnDisplay();
-            
-            Debug.Log("TurnPanelController: Successfully initialized and connected to TurnManager");
+            // Start coroutine to wait for TurnManager to be ready
+            StartCoroutine(WaitForTurnManagerAndSubscribe());
         }
         
-        private void OnDestroy()
+        private System.Collections.IEnumerator WaitForTurnManagerAndSubscribe()
         {
-            // Unsubscribe from events to prevent memory leaks
-            if (turnManager != null)
+            // Wait up to 5 seconds for TurnManager to be ready
+            float timeout = 5f;
+            float elapsed = 0f;
+            
+            while (elapsed < timeout)
             {
-                turnManager.OnTurnStart -= OnTurnStart;
-                turnManager.OnTurnEnd -= OnTurnEnd;
-                turnManager.OnMoveCountChanged -= OnMoveCountChanged;
+                // Auto-find TurnManager
+                if (autoFindTurnManager)
+                {
+                    turnManager = TurnManager.Instance;
+                }
+                
+                if (turnManager != null)
+                {
+                    // Subscribe to turn events
+                    turnManager.OnTurnStart += OnTurnStart;
+                    turnManager.OnTurnEnd += OnTurnEnd;
+                    turnManager.OnMoveCountChanged += OnMoveCountChanged;
+                    
+                    // Initialize display
+                    UpdateTurnDisplay();
+                    
+                    Debug.Log("TurnPanelController: Successfully initialized and connected to TurnManager");
+                    yield break; // Exit the coroutine
+                }
+                
+                // Wait a frame and try again
+                yield return null;
+                elapsed += Time.deltaTime;
             }
+            
+            // If we reach here, we timed out
+            Debug.LogError("TurnPanelController: Timeout waiting for TurnManager.Instance!");
+            enabled = false;
         }
         
         private void OnTurnStart(Unit.Player player)
@@ -235,6 +243,17 @@ namespace TurnClash.UI
         public void ForceUpdateDisplay()
         {
             UpdateTurnDisplay();
+        }
+        
+        private void OnDestroy()
+        {
+            // Unsubscribe from events to prevent memory leaks
+            if (turnManager != null)
+            {
+                turnManager.OnTurnStart -= OnTurnStart;
+                turnManager.OnTurnEnd -= OnTurnEnd;
+                turnManager.OnMoveCountChanged -= OnMoveCountChanged;
+            }
         }
     }
 } 
