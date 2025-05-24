@@ -17,10 +17,16 @@ public class GameManager : MonoBehaviour
     [SerializeField] private bool showResetInstructions = true;
     
     private static GameManager instance;
+    private static bool isApplicationQuitting = false;
     
     public static GameManager Instance
     {
-        get { return instance; }
+        get 
+        { 
+            if (isApplicationQuitting)
+                return null;
+            return instance; 
+        }
     }
     
     private void Awake()
@@ -32,6 +38,21 @@ public class GameManager : MonoBehaviour
         }
         
         instance = this;
+        isApplicationQuitting = false;
+        
+        Debug.Log("GameManager: Initializing all singleton systems...");
+        
+        // Force initialization of all singleton systems early to prevent timeout errors
+        InitializeSingletonSystems();
+        
+        Debug.Log("GameManager: All singleton systems initialized");
+    }
+    
+    private void InitializeSingletonSystems()
+    {
+        // Reset all singleton flags to ensure they can be created
+        Debug.Log("GameManager: Resetting singleton flags for new scene...");
+        UnitSelectionManager.ResetForNewScene();
         
         // Ensure managers are found
         if (groundManager == null)
@@ -43,23 +64,38 @@ public class GameManager : MonoBehaviour
         // Initialize movement controller if not assigned
         if (movementController == null)
         {
-            // The UnitMovementController will create itself as a singleton
+            // Force singleton creation
+            Debug.Log("GameManager: Initializing UnitMovementController...");
             movementController = UnitMovementController.Instance;
         }
         
         // Initialize turn manager if not assigned
         if (turnManager == null)
         {
-            // The TurnManager will create itself as a singleton
+            // Force singleton creation
+            Debug.Log("GameManager: Initializing TurnManager...");
             turnManager = TurnManager.Instance;
         }
         
         // Initialize combat manager if not assigned
         if (combatManager == null)
         {
-            // The CombatManager will create itself as a singleton
+            // Force singleton creation
+            Debug.Log("GameManager: Initializing CombatManager...");
             combatManager = CombatManager.Instance;
         }
+        
+        // Initialize UnitSelectionManager (often needed by UI)
+        Debug.Log("GameManager: Initializing UnitSelectionManager...");
+        var selectionManager = UnitSelectionManager.Instance;
+        
+        Debug.Log("GameManager: All singletons initialized and ready");
+    }
+    
+    private void OnApplicationQuit()
+    {
+        isApplicationQuitting = true;
+        Debug.Log("GameManager: Application quitting, preventing new instance creation");
     }
     
     private void Start()
@@ -110,6 +146,8 @@ public class GameManager : MonoBehaviour
     
     private void OnDestroy()
     {
+        Debug.Log("GameManager: OnDestroy called");
+        
         // Unsubscribe from events to prevent memory leaks
         if (turnManager != null)
         {
@@ -123,6 +161,14 @@ public class GameManager : MonoBehaviour
             combatManager.OnPlayerEliminationCheck -= OnPlayerEliminationCheck;
             combatManager.OnUnitKilled -= OnUnitKilled;
         }
+        
+        // Clear singleton reference
+        if (instance == this)
+        {
+            instance = null;
+        }
+        
+        Debug.Log("GameManager: Cleanup complete, instance cleared");
     }
     
     private void OnPlayerTurnStart(Unit.Player player)
@@ -215,6 +261,9 @@ public class GameManager : MonoBehaviour
     public void ResetGame()
     {
         Debug.Log("🔄 Resetting game - reloading scene...");
+        
+        // Mark that scene is unloading to prevent singleton creation during cleanup
+        UnitSelectionManager.MarkSceneUnloading();
         
         // Unsubscribe from events before scene reload to prevent issues
         if (turnManager != null)

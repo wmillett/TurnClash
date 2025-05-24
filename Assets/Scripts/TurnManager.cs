@@ -64,10 +64,14 @@ public class TurnManager : MonoBehaviour
         
         instance = this;
         isApplicationQuitting = false;
+        Debug.Log("TurnManager: Instance created and initialized");
     }
     
     private void Start()
     {
+        // Ensure the flag is cleared on scene start
+        isApplicationQuitting = false;
+        Debug.Log("TurnManager: Start() called, ready for operations");
         StartGame();
     }
     
@@ -237,6 +241,9 @@ public class TurnManager : MonoBehaviour
             instance = null;
         }
         
-        isApplicationQuitting = true;
+        // Only set quitting flag if we're actually quitting the application
+        // Don't set it during scene changes or manual destroy
+        if (debugTurns)
+            Debug.Log("TurnManager: Cleanup complete, instance cleared");
     }
 } 

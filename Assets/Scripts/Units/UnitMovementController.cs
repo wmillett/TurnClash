@@ -59,6 +59,14 @@ namespace TurnClash.Units
             
             instance = this;
             isApplicationQuitting = false;
+            Debug.Log("UnitMovementController: Instance created and initialized");
+        }
+        
+        private void Start()
+        {
+            // Ensure the flag is cleared on scene start
+            isApplicationQuitting = false;
+            Debug.Log("UnitMovementController: Start() called, ready for operations");
         }
         
         private void Update()
@@ -397,7 +405,10 @@ namespace TurnClash.Units
                 instance = null;
             }
             
-            isApplicationQuitting = true;
+            // Only set quitting flag if we're actually quitting the application
+            // Don't set it during scene changes or manual destroy
+            if (debugMovement)
+                Debug.Log("UnitMovementController: Cleanup complete, instance cleared");
         }
     }
 } 

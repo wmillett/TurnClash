@@ -69,11 +69,14 @@ public class CombatManager : MonoBehaviour
         
         instance = this;
         isApplicationQuitting = false;
+        Debug.Log("CombatManager: Instance created and initialized");
     }
     
     private void Start()
     {
-        if (isApplicationQuitting) return;
+        // Ensure the flag is cleared on scene start
+        isApplicationQuitting = false;
+        Debug.Log("CombatManager: Start() called, ready for operations");
         
         // Subscribe to all existing units' combat events
         SubscribeToExistingUnits();
@@ -350,6 +353,9 @@ public class CombatManager : MonoBehaviour
             instance = null;
         }
         
-        isApplicationQuitting = true;
+        // Only set quitting flag if we're actually quitting the application
+        // Don't set it during scene changes or manual destroy
+        if (enableCombatLogging)
+            Debug.Log("CombatManager: Cleanup complete, instance cleared");
     }
 } 

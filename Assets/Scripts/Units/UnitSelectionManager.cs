@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using System.Linq;
 using TurnClash.Units;
@@ -15,13 +16,14 @@ namespace TurnClash.Units
         // Singleton instance
         private static UnitSelectionManager instance;
         private static bool isApplicationQuitting = false; // Prevent creation during shutdown
+        private static bool isSceneUnloading = false; // Prevent creation during scene changes
         
         public static UnitSelectionManager Instance
         {
             get
             {
                 // Don't create new instances during application quit or scene unload
-                if (isApplicationQuitting)
+                if (isApplicationQuitting || isSceneUnloading)
                 {
                     return null;
                 }
@@ -29,10 +31,11 @@ namespace TurnClash.Units
                 if (instance == null)
                 {
                     instance = FindObjectOfType<UnitSelectionManager>();
-                    if (instance == null && !isApplicationQuitting)
+                    if (instance == null && !isApplicationQuitting && !isSceneUnloading)
                     {
                         GameObject go = new GameObject("UnitSelectionManager");
                         instance = go.AddComponent<UnitSelectionManager>();
+                        Debug.Log("UnitSelectionManager: Created new singleton instance");
                     }
                 }
                 return instance;
@@ -68,7 +71,33 @@ namespace TurnClash.Units
             
             instance = this;
             isApplicationQuitting = false; // Reset the flag when awaking
-            Debug.Log("UnitSelectionManager: Instance created");
+            Debug.Log("UnitSelectionManager: Instance created and initialized");
+        }
+        
+        private void Start()
+        {
+            // Ensure the flag is cleared on scene start
+            isApplicationQuitting = false;
+            isSceneUnloading = false;
+            Debug.Log("UnitSelectionManager: Start() called, ready for operations");
+            
+            // Subscribe to scene unloading events to automatically detect scene changes
+            if (!sceneEventsSubscribed)
+            {
+                SceneManager.activeSceneChanged += OnActiveSceneChanged;
+                sceneEventsSubscribed = true;
+                Debug.Log("UnitSelectionManager: Subscribed to scene change events");
+            }
+        }
+        
+        // Track if we've subscribed to scene events (static to persist across instances)
+        private static bool sceneEventsSubscribed = false;
+        
+        private static void OnActiveSceneChanged(Scene current, Scene next)
+        {
+            // When scene changes, mark as unloading to prevent creation during transition
+            isSceneUnloading = true;
+            Debug.Log("UnitSelectionManager: Scene changing, preventing new instance creation");
         }
         
         private void OnApplicationQuit()
@@ -81,8 +110,8 @@ namespace TurnClash.Units
         
         private void OnApplicationFocus(bool hasFocus)
         {
-            // Clean up when losing focus (but not during quit)
-            if (!hasFocus && !isApplicationQuitting)
+            // Clean up when losing focus (but not during quit or scene unloading)
+            if (!hasFocus && !isApplicationQuitting && !isSceneUnloading)
             {
                 if (debugSelection)
                     Debug.Log("UnitSelectionManager: Application lost focus, clearing selections");
@@ -92,8 +121,8 @@ namespace TurnClash.Units
         
         private void Update()
         {
-            // Don't process input during application quit
-            if (isApplicationQuitting)
+            // Don't process input during application quit or scene unloading
+            if (isApplicationQuitting || isSceneUnloading)
                 return;
                 
             // Handle input for clearing selection
@@ -123,7 +152,7 @@ namespace TurnClash.Units
         
         public void SelectUnit(UnitSelectable unit)
         {
-            if (unit == null || isApplicationQuitting) return;
+            if (unit == null || isApplicationQuitting || isSceneUnloading) return;
             
             bool isMultiSelect = allowMultipleSelection && Input.GetKey(multiSelectKey);
             
@@ -165,7 +194,7 @@ namespace TurnClash.Units
         
         public void DeselectUnit(UnitSelectable unit)
         {
-            if (unit == null || !selectedUnits.Contains(unit) || isApplicationQuitting) return;
+            if (unit == null || !selectedUnits.Contains(unit) || isApplicationQuitting || isSceneUnloading) return;
             
             selectedUnits.Remove(unit);
             
@@ -200,12 +229,12 @@ namespace TurnClash.Units
                 if (unit != null)
                 {
                     unit.Deselect();
-                    if (triggerEvents && !isApplicationQuitting)
+                    if (triggerEvents && !isApplicationQuitting && !isSceneUnloading)
                         OnUnitDeselected?.Invoke(unit);
                 }
             }
             
-            if (triggerEvents && !isApplicationQuitting)
+            if (triggerEvents && !isApplicationQuitting && !isSceneUnloading)
             {
                 OnSelectionCleared?.Invoke();
                 OnSelectionChanged?.Invoke(SelectedUnits);
@@ -217,7 +246,7 @@ namespace TurnClash.Units
         
         public void ToggleUnitSelection(UnitSelectable unit)
         {
-            if (unit == null || isApplicationQuitting) return;
+            if (unit == null || isApplicationQuitting || isSceneUnloading) return;
             
             if (IsUnitSelected(unit))
             {
@@ -236,13 +265,13 @@ namespace TurnClash.Units
         
         public List<UnitSelectable> GetSelectedUnitsOfPlayer(Unit.Player player)
         {
-            if (isApplicationQuitting) return new List<UnitSelectable>();
+            if (isApplicationQuitting || isSceneUnloading) return new List<UnitSelectable>();
             return selectedUnits.Where(unit => unit.GetUnit()?.player == player).ToList();
         }
         
         public void SelectUnitsOfPlayer(Unit.Player player)
         {
-            if (isApplicationQuitting) return;
+            if (isApplicationQuitting || isSceneUnloading) return;
             
             var playerUnits = FindObjectsOfType<UnitSelectable>()
                 .Where(unit => unit.GetUnit().player == player)
@@ -269,7 +298,7 @@ namespace TurnClash.Units
         
         private void CheckForEmptySpaceClick()
         {
-            if (isApplicationQuitting) return;
+            if (isApplicationQuitting || isSceneUnloading) return;
             
             // Cast a ray from camera to see what we hit
             Camera cam = Camera.main;
@@ -325,14 +354,16 @@ namespace TurnClash.Units
                 instance = null;
             }
             
-            // Mark as quitting to prevent recreation
-            isApplicationQuitting = true;
+            // Only set quitting flag if we're actually quitting the application
+            // Don't set it during scene changes or manual destroy
+            if (debugSelection)
+                Debug.Log("UnitSelectionManager: Cleanup complete, instance cleared");
         }
         
         // Add method to validate and clean up null units
         private void CleanupNullUnits()
         {
-            if (isApplicationQuitting) return;
+            if (isApplicationQuitting || isSceneUnloading) return;
             
             if (selectedUnits.RemoveAll(unit => unit == null) > 0)
             {
@@ -354,10 +385,29 @@ namespace TurnClash.Units
         // Call this periodically or when accessing selected units
         public void ValidateSelection()
         {
-            if (!isApplicationQuitting)
+            if (!isApplicationQuitting && !isSceneUnloading)
             {
                 CleanupNullUnits();
             }
+        }
+        
+        /// <summary>
+        /// Reset the application quitting flag - called by GameManager on scene start
+        /// </summary>
+        public static void ResetForNewScene()
+        {
+            isApplicationQuitting = false;
+            isSceneUnloading = false; // Clear scene unloading flag
+            Debug.Log("UnitSelectionManager: Reset for new scene");
+        }
+        
+        /// <summary>
+        /// Mark that scene is unloading - called by GameManager before scene change
+        /// </summary>
+        public static void MarkSceneUnloading()
+        {
+            isSceneUnloading = true;
+            Debug.Log("UnitSelectionManager: Scene unloading, preventing new instance creation");
         }
     }
 } 
