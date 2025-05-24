@@ -70,6 +70,17 @@ namespace TurnClash.Units
                 CheckForEmptySpaceClick();
             }
             
+            // Handle right-click to deselect if something is selected
+            if (Input.GetMouseButtonDown(1))
+            {
+                if (HasSelection)
+                {
+                    ClearSelection();
+                    if (debugSelection)
+                        Debug.Log("Selection cleared via right-click");
+                }
+            }
+            
             // Handle escape key to clear selection
             if (Input.GetKeyDown(KeyCode.Escape))
             {
