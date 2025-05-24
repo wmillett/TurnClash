@@ -13,8 +13,47 @@ public class UnitSpawner : MonoBehaviour
     [SerializeField] private int unitsPerType = 2;
     [SerializeField] private float unitHeightOffset = 0.5f; // Height above the tile
     
+    [Header("Unit Templates")]
+    [SerializeField] private UnitTemplate chillCubeTemplate;
+    [SerializeField] private UnitTemplate meanBallTemplate;
+    
+    [System.Serializable]
+    public class UnitTemplate
+    {
+        public string unitName;
+        public int maxHealth = 100;
+        public int attack = 15;
+        public int defense = 5;
+    }
+    
     private IsometricGroundManager groundManager;
     private HashSet<Vector2Int> occupiedPositions = new HashSet<Vector2Int>();
+    
+    private void Awake()
+    {
+        // Initialize default templates if not set
+        if (chillCubeTemplate == null)
+        {
+            chillCubeTemplate = new UnitTemplate
+            {
+                unitName = "Chill Cube",
+                maxHealth = 80,
+                attack = 12,
+                defense = 8
+            };
+        }
+        
+        if (meanBallTemplate == null)
+        {
+            meanBallTemplate = new UnitTemplate
+            {
+                unitName = "Mean Ball",
+                maxHealth = 120,
+                attack = 18,
+                defense = 3
+            };
+        }
+    }
     
     private void Start()
     {
@@ -39,20 +78,20 @@ public class UnitSpawner : MonoBehaviour
     
     private void SpawnUnits()
     {
-        // Spawn units of type 1
+        // Spawn units of type 1 (Chill Cube)
         for (int i = 0; i < unitsPerType; i++)
         {
-            SpawnUnit(unitPlaceholder1Prefab, Creature.Player.Player1);
+            SpawnUnit(unitPlaceholder1Prefab, Creature.Player.Player1, chillCubeTemplate);
         }
         
-        // Spawn units of type 2
+        // Spawn units of type 2 (Mean Ball)
         for (int i = 0; i < unitsPerType; i++)
         {
-            SpawnUnit(unitPlaceholder2Prefab, Creature.Player.Player2);
+            SpawnUnit(unitPlaceholder2Prefab, Creature.Player.Player2, meanBallTemplate);
         }
     }
     
-    private void SpawnUnit(GameObject unitPrefab, Creature.Player player)
+    private void SpawnUnit(GameObject unitPrefab, Creature.Player player, UnitTemplate template)
     {
         if (unitPrefab == null)
         {
@@ -95,17 +134,29 @@ public class UnitSpawner : MonoBehaviour
         
         // Instantiate the unit
         GameObject unitObj = Instantiate(unitPrefab, worldPosition, Quaternion.identity);
-        unitObj.name = $"{unitPrefab.name}_{player}_{occupiedPositions.Count}";
+        unitObj.name = $"{template.unitName}_{player}_{occupiedPositions.Count}";
         
-        // Configure the Creature component
+        // Configure the Creature component with template stats
         Creature creature = unitObj.GetComponent<Creature>();
         if (creature != null)
         {
             creature.player = player;
+            creature.maxHealth = template.maxHealth;
+            creature.health = template.maxHealth; // Start with full health
+            creature.attack = template.attack;
+            creature.defense = template.defense;
         }
         else
         {
             Debug.LogWarning($"Spawned unit {unitObj.name} does not have a Creature component!");
+        }
+        
+        // Configure the Unit component with template name
+        Unit unit = unitObj.GetComponent<Unit>();
+        if (unit != null)
+        {
+            // Set the unit name using the public property
+            unit.UnitName = template.unitName;
         }
         
         // Add UnitSelectable component if it doesn't exist
@@ -141,7 +192,7 @@ public class UnitSpawner : MonoBehaviour
         // Mark position as occupied
         occupiedPositions.Add(gridPosition.Value);
         
-        Debug.Log($"Spawned {unitObj.name} at grid position {gridPosition.Value}, world position {worldPosition}");
+        Debug.Log($"Spawned {template.unitName} ({unitObj.name}) at grid position {gridPosition.Value} with stats: HP={template.maxHealth}, ATK={template.attack}, DEF={template.defense}");
     }
     
     private Vector2Int? GetRandomAvailablePosition()

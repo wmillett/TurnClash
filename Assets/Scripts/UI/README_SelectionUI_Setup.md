@@ -1,180 +1,161 @@
 # SelectionInfoUI Setup Guide
 
-## Quick Setup (Automated)
+## Quick Setup (Automated) - Using Existing Panel
 
-### Method 1: Using SelectionUISetup Helper
+### Method 1: Using Existing SelectionPanel
 
-1. **Create the Setup GameObject:**
+1. **Prepare Your Existing Panel:**
+   - Make sure you have a SelectionPanel already created in your Canvas
+   - The panel can be empty or have existing children (they will be cleared)
+
+2. **Create the Setup GameObject:**
    - Create an empty GameObject in your scene
    - Name it "UISetup"
    - Add the `SelectionUISetup` component
 
-2. **Configure and Run:**
-   - In the inspector, you can adjust:
-     - **Panel Size**: Default (300, 150)
-     - **Panel Position**: Default (-10, 10) from bottom-left
-     - **Target Canvas**: Leave empty to auto-create
-   - Right-click on the component → "Create Selection UI"
-   - The UI will be automatically created and configured!
+3. **Configure for Existing Panel:**
+   - **Use Existing Panel**: ✓ (checked)
+   - **Existing Selection Panel**: Drag your SelectionPanel from the Canvas
+   - **Target Canvas**: Will be auto-detected from the panel
+   - Panel Size and Position are ignored when using existing panel
 
-3. **Clean Up:**
-   - Delete the UISetup GameObject after creation (it's no longer needed)
+4. **Run Setup:**
+   - Right-click on the SelectionUISetup component → "Setup Selection UI"
+   - The existing panel will be populated with:
+     - Unit Name text (top)
+     - Health Bar (slider)
+     - Health Text showing "35/35" format
+     - Attack and Defense stats side by side
 
-### Method 2: Using createUIOnStart
+5. **Clean Up:**
+   - Delete the UISetup GameObject after setup
+
+### Method 2: Auto-Setup on Game Start
 
 1. **Automatic Creation:**
    - Add `SelectionUISetup` to any GameObject
+   - Check "Use Existing Panel" and assign your SelectionPanel
    - Check "Create UI On Start"
-   - Run the game - UI will be created automatically
+   - Run the game - UI will be setup automatically
 
 ---
 
-## Manual Setup (Step by Step)
+## What Gets Created
 
-### Step 1: Create Canvas Structure
+The new setup creates these UI elements in your existing panel:
 
-1. **Main Canvas:**
-   ```
-   Right-click Hierarchy → UI → Canvas
-   Name: "GameUI"
-   Canvas Scaler: Scale With Screen Size
-   Reference Resolution: 1920x1080
-   ```
+### Layout Structure:
+```
+SelectionPanel
+├── UnitNameText          ("Unit Name" - 18pt, Bold)
+├── HealthBar            (Slider with fill and background)
+├── HealthText           ("35/35" format - 12pt)
+├── AttackText           ("ATK: 15" - 14pt, left side)
+└── DefenseText          ("DEF: 10" - 14pt, right side)
+```
 
-2. **Selection Panel:**
-   ```
-   Right-click Canvas → UI → Panel
-   Name: "SelectionPanel"
-   Position: Bottom-left corner
-   Size: 300x150 (adjust as needed)
-   Background: Semi-transparent black (0,0,0,0.7)
-   ```
+### Health Bar Features:
+- **Visual Health Bar**: Shows health percentage as a filled slider
+- **Color Coding**: 
+  - Green (>60% health)
+  - Yellow (30-60% health) 
+  - Red (<30% health)
+- **Numeric Display**: "Current/Max" format (e.g., "35/50")
+- **Non-Interactive**: Players cannot adjust the slider
 
-### Step 2: Add Text Elements
-
-Create these as children of SelectionPanel:
-
-1. **UnitNameText:**
-   ```
-   UI → Text - TextMeshPro
-   Text: "Unit Name"
-   Font Size: 18, Bold
-   Color: White
-   Position: Top of panel
-   ```
-
-2. **HealthText:**
-   ```
-   UI → Text - TextMeshPro  
-   Text: "Health: --/--"
-   Font Size: 14, Normal
-   Color: White (will change based on health)
-   ```
-
-3. **PlayerText:**
-   ```
-   UI → Text - TextMeshPro
-   Text: "Player: --"
-   Font Size: 14, Normal
-   Color: White (will change based on player)
-   ```
-
-4. **PositionText:**
-   ```
-   UI → Text - TextMeshPro
-   Text: "Position: (--, --)"
-   Font Size: 14, Normal
-   Color: White
-   ```
-
-### Step 3: Configure SelectionInfoUI Component
-
-1. **Add Component:**
-   - Select the SelectionPanel
-   - Add Component → Scripts → SelectionInfoUI
-
-2. **Assign References:**
-   - **Selection Panel**: The SelectionPanel itself
-   - **Unit Name Text**: UnitNameText component
-   - **Health Text**: HealthText component  
-   - **Player Text**: PlayerText component
-   - **Position Text**: PositionText component
-   - **Hide When No Selection**: ✓ (checked)
+### Stats Display:
+- **Attack**: Shows unit's attack value
+- **Defense**: Shows unit's defense value
+- **Side-by-Side Layout**: Both stats on same row to save space
 
 ---
 
-## Layout Suggestions
+## Manual Setup (If Needed)
 
-### Bottom-Left Panel (Recommended)
-```
-Position: Anchored to bottom-left
-Offset: 10px from edges
-Size: 300x150
-Good for: Most games, doesn't block main view
-```
+If you prefer manual setup, here's what to create in your existing SelectionPanel:
 
-### Top-Right Panel
+### 1. Unit Name Text
 ```
-Position: Anchored to top-right
-Offset: 10px from edges  
-Size: 280x120
-Good for: Strategy games, out of action area
+Type: TextMeshPro - Text (UI)
+Name: "UnitNameText"
+Position: Top of panel
+Font: 18pt, Bold
+Color: White
 ```
 
-### Bottom-Center Panel
+### 2. Health Bar
 ```
-Position: Anchored to bottom-center
-Offset: 0px from bottom, centered
-Size: 400x100
-Good for: RPGs, character-focused games
+Type: UI → Slider
+Name: "HealthBar"
+Position: Below unit name
+Size: Full width, ~20px height
+Settings:
+- Interactable: Off
+- Transition: None
+- Min Value: 0, Max Value: 1
+- Background: Dark gray
+- Fill: Green color, Horizontal fill
 ```
+
+### 3. Health Text
+```
+Type: TextMeshPro - Text (UI)
+Name: "HealthText"
+Position: Below health bar
+Font: 12pt, Normal
+Color: White (will change based on health)
+Text: "Health: --/--"
+```
+
+### 4. Attack Text
+```
+Type: TextMeshPro - Text (UI)
+Name: "AttackText"
+Position: Bottom left
+Font: 14pt, Normal
+Width: Half panel width
+Text: "ATK: --"
+```
+
+### 5. Defense Text
+```
+Type: TextMeshPro - Text (UI)
+Name: "DefenseText"
+Position: Bottom right
+Font: 14pt, Normal
+Width: Half panel width
+Text: "DEF: --"
+```
+
+### 6. Add SelectionInfoUI Component
+- Add the SelectionInfoUI component to your SelectionPanel
+- Assign all the created UI elements to their respective fields
 
 ---
 
-## Styling Options
+## Health Bar Color Customization
 
-### Color Schemes
+You can customize health bar colors in the SelectionInfoUI component:
 
-**Dark Theme (Default):**
+### Inspector Settings:
+- **Health Color High**: Color when health > 60% (default: Green)
+- **Health Color Mid**: Color when health 30-60% (default: Yellow)
+- **Health Color Low**: Color when health < 30% (default: Red)
+- **Mid Health Threshold**: Percentage for yellow color (default: 0.6)
+- **Low Health Threshold**: Percentage for red color (default: 0.3)
+
+### Code Customization:
+```csharp
+// Get the SelectionInfoUI component
+SelectionInfoUI uiComponent = selectionPanel.GetComponent<SelectionInfoUI>();
+
+// Set custom colors
+uiComponent.SetHealthBarColors(
+    Color.cyan,    // High health
+    Color.orange,  // Mid health  
+    Color.magenta  // Low health
+);
 ```
-Panel Background: (0, 0, 0, 0.7)
-Text Color: White
-Health Colors: Green/Yellow/Red
-Player1 Color: Blue
-Player2 Color: Red
-```
-
-**Light Theme:**
-```
-Panel Background: (1, 1, 1, 0.8)
-Text Color: Black
-Health Colors: Dark Green/Orange/Dark Red
-Player1 Color: Dark Blue
-Player2 Color: Dark Red
-```
-
-### Font Sizes
-```
-Unit Name: 16-20pt (Bold)
-Info Text: 12-16pt (Normal)
-Small Details: 10-12pt (Normal)
-```
-
----
-
-## Input Controls Update
-
-The selection system now supports:
-
-### Mouse Controls:
-- **Left Click**: Select unit
-- **Left Click + Ctrl**: Multi-select (if enabled)
-- **Left Click on Empty Space**: Clear selection
-- **Right Click**: Clear selection (NEW!)
-
-### Keyboard Controls:
-- **Escape**: Clear selection
-- **Ctrl** (Hold): Multi-select modifier
 
 ---
 
@@ -182,88 +163,90 @@ The selection system now supports:
 
 ### Verification Checklist:
 
-1. **UI Creation:**
-   - [ ] Canvas exists with proper scaling
-   - [ ] SelectionPanel is positioned correctly
-   - [ ] All text elements are present and visible
+1. **Panel Setup:**
+   - [ ] Existing SelectionPanel is properly configured
+   - [ ] All UI elements are created and positioned correctly
+   - [ ] SelectionInfoUI component is attached with references assigned
 
-2. **Component Setup:**
-   - [ ] SelectionInfoUI component attached to panel
-   - [ ] All text references assigned in inspector
-   - [ ] Hide When No Selection is checked
+2. **Health Bar Test:**
+   - [ ] Health bar fills correctly based on unit health
+   - [ ] Health bar color changes with health percentage
+   - [ ] Health text shows "current/max" format
+   - [ ] Health text color matches health bar color
 
-3. **Functionality Test:**
-   - [ ] UI is hidden on game start
+3. **Stats Display:**
+   - [ ] Attack value displays correctly
+   - [ ] Defense value displays correctly
+   - [ ] Both stats fit side by side
+
+4. **Functionality:**
+   - [ ] UI hides when no unit selected
    - [ ] UI appears when unit is selected
-   - [ ] UI shows correct unit information
-   - [ ] UI hides when selection is cleared
+   - [ ] UI updates in real-time if health changes
    - [ ] Right-click clears selection
 
 ### Common Issues:
 
-**UI Not Appearing:**
-- Check that Canvas has GraphicRaycaster
-- Verify SelectionInfoUI references are assigned
-- Ensure units have UnitSelectable components
+**Health Bar Not Filling:**
+- Check that health bar's fillRect is properly assigned
+- Verify unit's health and maxHealth values are valid
+- Make sure health bar min/max values are 0 and 1
 
-**Text Not Updating:**
-- Check console for errors
-- Verify unit has proper Unit component
-- Make sure text references aren't null
+**Colors Not Changing:**
+- Check health percentage calculation
+- Verify fillRect has an Image component
+- Ensure color thresholds are set correctly
 
-**Right-Click Not Working:**
-- Check that UnitSelectionManager is active
-- Verify debug logs show right-click detection
-- Ensure no UI elements are blocking clicks
-
----
-
-## Customization Examples
-
-### Adding Attack/Defense Display:
-```csharp
-// In SelectionInfoUI, add new text field
-[SerializeField] private TextMeshProUGUI statsText;
-
-// In UpdateUnitInfo():
-if (statsText != null)
-{
-    statsText.text = $"ATK: {unit.attack} | DEF: {unit.defense}";
-}
-```
-
-### Adding Unit Portrait:
-```csharp
-// Add Image field for unit portrait
-[SerializeField] private Image unitPortrait;
-
-// Assign sprite based on unit type
-if (unitPortrait != null && unit.unitSprite != null)
-{
-    unitPortrait.sprite = unit.unitSprite;
-}
-```
-
-### Animated Panel Transitions:
-```csharp
-// Use DOTween or similar for smooth show/hide
-selectionPanel.transform.DOScale(Vector3.one, 0.3f);
-```
+**Stats Not Showing:**
+- Verify unit has valid attack/defense values
+- Check that text components are properly assigned
+- Look for null reference errors in console
 
 ---
 
-## Integration with Turn System
+## Integration with Damage System
 
-For turn-based games, consider:
+To make the health bar update when units take damage:
 
-1. **Show Available Actions:**
-   - Display movement/attack options when unit is selected
-   - Gray out unavailable actions
+### Option 1: Event-Based Updates
+```csharp
+// In your Unit/Creature class, add an event
+public System.Action<Unit> OnHealthChanged;
 
-2. **Turn Indicators:**
-   - Show whose turn it is
-   - Highlight if selected unit can act
+// In TakeDamage method:
+public void TakeDamage(int damage)
+{
+    // ... existing damage logic ...
+    OnHealthChanged?.Invoke(this);
+}
+```
 
-3. **Action Feedback:**
-   - Update UI after unit performs actions
-   - Show cooldowns or charges remaining 
+### Option 2: Automatic Updates
+The current system updates health every frame when a unit is selected, so damage changes will be reflected immediately without additional code.
+
+---
+
+## Input Controls
+
+The selection system supports:
+
+### Mouse Controls:
+- **Left Click**: Select unit
+- **Left Click + Ctrl**: Multi-select (if enabled)
+- **Left Click on Empty Space**: Clear selection
+- **Right Click**: Clear selection
+
+### Keyboard Controls:
+- **Escape**: Clear selection
+- **Ctrl** (Hold): Multi-select modifier
+
+---
+
+## Performance Notes
+
+The system is optimized for turn-based games:
+- Health updates only occur when unit is selected
+- Color changes are calculated efficiently
+- No unnecessary UI updates when no selection
+
+For real-time games with frequently changing health, consider limiting update frequency to avoid performance issues. 

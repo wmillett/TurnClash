@@ -12,6 +12,13 @@ namespace TurnClash.Units
         private IsometricGroundManager groundManager;
         private UnitSpawner unitSpawner;
         
+        // Public property to access unit name
+        public string UnitName 
+        { 
+            get { return unitName; } 
+            set { unitName = value; }
+        }
+        
         protected override void Start()
         {
             base.Start();
