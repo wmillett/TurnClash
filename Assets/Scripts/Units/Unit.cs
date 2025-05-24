@@ -2,15 +2,32 @@ using UnityEngine;
 
 namespace TurnClash.Units
 {
-    public class Unit : Creature
+    /// <summary>
+    /// Complete Unit component that combines all creature and unit functionality
+    /// No longer inherits from Creature - all functionality is contained here
+    /// </summary>
+    public class Unit : MonoBehaviour
     {
+        [Header("Player Assignment")]
+        public Player player;
+        
+        [Header("Combat Stats")]
+        public int health;
+        public int maxHealth = 100;
+        public int attack = 15;
+        public int defense = 5;
+        
         [Header("Unit Properties")]
         [SerializeField] private string unitName = "Unit";
         [SerializeField] private float moveSpeed = 5f;
         
+        [Header("Grid Movement")]
         private Vector2Int currentGridPosition;
         private IsometricGroundManager groundManager;
         private UnitSpawner unitSpawner;
+        
+        // Player enum moved here since it's no longer in Creature
+        public enum Player { Player1, Player2 }
         
         // Public property to access unit name
         public string UnitName 
@@ -19,9 +36,11 @@ namespace TurnClash.Units
             set { unitName = value; }
         }
         
-        protected override void Start()
+        protected virtual void Start()
         {
-            base.Start();
+            // Initialize health to max if not set
+            if (health <= 0)
+                health = maxHealth;
             
             // Find managers
             groundManager = FindObjectOfType<IsometricGroundManager>();
@@ -32,6 +51,34 @@ namespace TurnClash.Units
             {
                 currentGridPosition = groundManager.WorldToGridPosition(transform.position);
             }
+            
+            Debug.Log($"Unit {unitName} initialized with HP:{health}/{maxHealth}, ATK:{attack}, DEF:{defense}");
+        }
+        
+        public void TakeDamage(int damage)
+        {
+            damage = Mathf.Max(0, damage - defense); // Defense reduces damage
+
+            health -= damage;
+            Debug.Log($"{unitName} took {damage} damage (after defense). Health: {health}/{maxHealth}");
+            
+            if (health <= 0)
+            {
+                Die();
+            }
+        }
+
+        public virtual void Die()
+        {
+            Debug.Log($"{unitName} has died!");
+            
+            // Clear our position from the spawner
+            if (unitSpawner != null)
+            {
+                unitSpawner.UpdateUnitPosition(currentGridPosition, new Vector2Int(-1, -1));
+            }
+            
+            Destroy(gameObject);
         }
         
         public Vector2Int GetGridPosition()
@@ -96,15 +143,35 @@ namespace TurnClash.Units
             return true;
         }
         
-        public override void Die()
+        // Utility methods for getting unit info
+        public bool IsAlive() => health > 0;
+        public float GetHealthPercentage() => maxHealth > 0 ? (float)health / maxHealth : 0f;
+        public bool IsPlayerUnit(Player checkPlayer) => player == checkPlayer;
+        
+        // Method for healing
+        public void Heal(int healAmount)
         {
-            // Clear our position from the spawner
-            if (unitSpawner != null)
-            {
-                unitSpawner.UpdateUnitPosition(currentGridPosition, new Vector2Int(-1, -1));
-            }
+            int oldHealth = health;
+            health = Mathf.Min(health + healAmount, maxHealth);
+            int actualHeal = health - oldHealth;
             
-            base.Die();
+            if (actualHeal > 0)
+            {
+                Debug.Log($"{unitName} healed for {actualHeal} HP. Health: {health}/{maxHealth}");
+            }
+        }
+        
+        // Method for stat modifications
+        public void ModifyStats(int healthMod, int attackMod, int defenseMod)
+        {
+            maxHealth = Mathf.Max(1, maxHealth + healthMod);
+            attack = Mathf.Max(0, attack + attackMod);
+            defense = Mathf.Max(0, defense + defenseMod);
+            
+            // Ensure current health doesn't exceed new max
+            health = Mathf.Min(health, maxHealth);
+            
+            Debug.Log($"{unitName} stats modified. New stats - HP:{health}/{maxHealth}, ATK:{attack}, DEF:{defense}");
         }
     }
 } 

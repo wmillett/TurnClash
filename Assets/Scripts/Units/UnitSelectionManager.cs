@@ -53,12 +53,26 @@ namespace TurnClash.Units
             // Singleton setup
             if (instance != null && instance != this)
             {
+                Debug.Log("UnitSelectionManager: Destroying duplicate instance");
                 Destroy(gameObject);
                 return;
             }
             
             instance = this;
-            DontDestroyOnLoad(gameObject);
+            Debug.Log("UnitSelectionManager: Instance created");
+            // Removed DontDestroyOnLoad to allow proper scene cleanup
+            // DontDestroyOnLoad(gameObject);
+        }
+        
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            // Clean up when losing focus
+            if (!hasFocus)
+            {
+                if (debugSelection)
+                    Debug.Log("UnitSelectionManager: Application lost focus, clearing selections");
+                ClearSelection(false);
+            }
         }
         
         private void Update()
@@ -115,7 +129,14 @@ namespace TurnClash.Units
             // Notify the unit it's selected
             unit.Select();
             
-            // Fire events
+            // Fire events with validation
+            if (debugSelection)
+            {
+                Debug.Log($"UnitSelectionManager: Firing OnUnitSelected for {unit.name}");
+                Debug.Log($"OnUnitSelected has {OnUnitSelected?.GetInvocationList()?.Length ?? 0} subscribers");
+                Debug.Log($"OnSelectionChanged has {OnSelectionChanged?.GetInvocationList()?.Length ?? 0} subscribers");
+            }
+            
             OnUnitSelected?.Invoke(unit);
             OnSelectionChanged?.Invoke(SelectedUnits);
             
@@ -194,12 +215,12 @@ namespace TurnClash.Units
             return unit != null && selectedUnits.Contains(unit);
         }
         
-        public List<UnitSelectable> GetSelectedUnitsOfPlayer(Creature.Player player)
+        public List<UnitSelectable> GetSelectedUnitsOfPlayer(Unit.Player player)
         {
-            return selectedUnits.Where(unit => unit.GetUnit().player == player).ToList();
+            return selectedUnits.Where(unit => unit.GetUnit()?.player == player).ToList();
         }
         
-        public void SelectUnitsOfPlayer(Creature.Player player)
+        public void SelectUnitsOfPlayer(Unit.Player player)
         {
             var playerUnits = FindObjectsOfType<UnitSelectable>()
                 .Where(unit => unit.GetUnit().player == player)
@@ -262,10 +283,42 @@ namespace TurnClash.Units
         // Clean up when destroyed
         private void OnDestroy()
         {
+            if (debugSelection)
+                Debug.Log("UnitSelectionManager: OnDestroy called");
+                
+            // Clear all selections before destroying
+            ClearSelection(false); // Don't trigger events during cleanup
+            
             if (instance == this)
             {
                 instance = null;
             }
+        }
+        
+        // Add method to validate and clean up null units
+        private void CleanupNullUnits()
+        {
+            if (selectedUnits.RemoveAll(unit => unit == null) > 0)
+            {
+                if (debugSelection)
+                    Debug.Log("UnitSelectionManager: Removed null units from selection");
+                    
+                // Update last selected unit if it was null
+                if (lastSelectedUnit == null && selectedUnits.Count > 0)
+                {
+                    lastSelectedUnit = selectedUnits[selectedUnits.Count - 1];
+                }
+                else if (selectedUnits.Count == 0)
+                {
+                    lastSelectedUnit = null;
+                }
+            }
+        }
+        
+        // Call this periodically or when accessing selected units
+        public void ValidateSelection()
+        {
+            CleanupNullUnits();
         }
     }
 } 

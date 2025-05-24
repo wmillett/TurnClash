@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using TurnClash.Units;
+using System.Collections;
 
 namespace TurnClash.UI
 {
@@ -24,12 +25,21 @@ namespace TurnClash.UI
         
         [Header("Settings")]
         [SerializeField] private bool hideWhenNoSelection = true;
-        [SerializeField] private bool debugMode = true;
+        [SerializeField] private bool debugMode = false; // Changed to false to reduce console spam
         
         private UnitSelectable currentSelectedUnit;
         
+        private void Awake()
+        {
+            Debug.Log("SelectionInfoUI: Awake() called");
+            LogUIReferenceStatus("AWAKE");
+        }
+        
         private void Start()
         {
+            Debug.Log("SelectionInfoUI: Start() called");
+            LogUIReferenceStatus("START");
+            
             if (debugMode)
             {
                 Debug.Log("SelectionInfoUI: Starting up...");
@@ -41,19 +51,31 @@ namespace TurnClash.UI
             {
                 UnitSelectionManager.Instance.OnUnitSelected += OnUnitSelected;
                 UnitSelectionManager.Instance.OnSelectionCleared += OnSelectionCleared;
-                if (debugMode) Debug.Log("SelectionInfoUI: Subscribed to selection events");
+                Debug.Log("SelectionInfoUI: Successfully subscribed to selection events");
             }
             else
             {
-                if (debugMode) Debug.LogWarning("SelectionInfoUI: UnitSelectionManager.Instance is null!");
+                Debug.LogError("SelectionInfoUI: UnitSelectionManager.Instance is null! Events not subscribed.");
             }
             
             // Initially hide the panel
             if (hideWhenNoSelection && selectionPanel != null)
             {
                 selectionPanel.SetActive(false);
-                if (debugMode) Debug.Log("SelectionInfoUI: Panel hidden on start");
+                Debug.Log($"SelectionInfoUI: Panel hidden on start (hideWhenNoSelection = {hideWhenNoSelection})");
             }
+            
+            // Validate UI references
+            ValidateUIReferences();
+            
+            // BACKUP: If references are null, try to find them automatically
+            if (selectionPanel == null || unitNameText == null || healthText == null || attackText == null || defenseText == null || healthBar == null)
+            {
+                Debug.LogWarning("SelectionInfoUI: Some references are null, attempting to find them automatically...");
+                FindUIReferencesAutomatically();
+            }
+            
+            LogUIReferenceStatus("END OF START");
         }
         
         private void LogUIReferences()
@@ -67,6 +89,126 @@ namespace TurnClash.UI
             Debug.Log($"  - defenseText: {(defenseText != null ? "✓" : "✗")}");
         }
         
+        private void ValidateUIReferences()
+        {
+            bool allReferencesValid = true;
+            
+            if (selectionPanel == null)
+            {
+                Debug.LogError("SelectionInfoUI: selectionPanel is null! UI updates will fail.");
+                allReferencesValid = false;
+            }
+            
+            if (unitNameText == null)
+            {
+                Debug.LogError("SelectionInfoUI: unitNameText is null! Unit name won't update.");
+                allReferencesValid = false;
+            }
+            
+            if (healthText == null)
+            {
+                Debug.LogError("SelectionInfoUI: healthText is null! Health text won't update.");
+                allReferencesValid = false;
+            }
+            
+            if (healthBar == null)
+            {
+                Debug.LogError("SelectionInfoUI: healthBar is null! Health bar won't update.");
+                allReferencesValid = false;
+            }
+            
+            if (attackText == null)
+            {
+                Debug.LogError("SelectionInfoUI: attackText is null! Attack text won't update.");
+                allReferencesValid = false;
+            }
+            
+            if (defenseText == null)
+            {
+                Debug.LogError("SelectionInfoUI: defenseText is null! Defense text won't update.");
+                allReferencesValid = false;
+            }
+            
+            if (allReferencesValid)
+            {
+                Debug.Log("SelectionInfoUI: All UI references are properly assigned ✓");
+            }
+            else
+            {
+                Debug.LogError("SelectionInfoUI: Some UI references are missing! Use SelectionUISetup to fix this.");
+            }
+        }
+        
+        private void FindUIReferencesAutomatically()
+        {
+            Debug.Log("SelectionInfoUI: Attempting automatic UI reference discovery...");
+            
+            // Try to find SelectionPanel by name
+            if (selectionPanel == null)
+            {
+                var foundPanel = GameObject.Find("SelectionPanel");
+                if (foundPanel != null)
+                {
+                    selectionPanel = foundPanel;
+                    Debug.Log($"SelectionInfoUI: Auto-found SelectionPanel: {foundPanel.name}");
+                }
+            }
+            
+            // If we have a panel, look for children
+            if (selectionPanel != null)
+            {
+                if (unitNameText == null)
+                {
+                    var found = selectionPanel.transform.Find("UnitNameText")?.GetComponent<TextMeshProUGUI>();
+                    if (found != null)
+                    {
+                        unitNameText = found;
+                        Debug.Log($"SelectionInfoUI: Auto-found UnitNameText: {found.name}");
+                    }
+                }
+                
+                if (healthText == null)
+                {
+                    var found = selectionPanel.transform.Find("HealthText")?.GetComponent<TextMeshProUGUI>();
+                    if (found != null)
+                    {
+                        healthText = found;
+                        Debug.Log($"SelectionInfoUI: Auto-found HealthText: {found.name}");
+                    }
+                }
+                
+                if (attackText == null)
+                {
+                    var found = selectionPanel.transform.Find("AttackText")?.GetComponent<TextMeshProUGUI>();
+                    if (found != null)
+                    {
+                        attackText = found;
+                        Debug.Log($"SelectionInfoUI: Auto-found AttackText: {found.name}");
+                    }
+                }
+                
+                if (defenseText == null)
+                {
+                    var found = selectionPanel.transform.Find("DefenseText")?.GetComponent<TextMeshProUGUI>();
+                    if (found != null)
+                    {
+                        defenseText = found;
+                        Debug.Log($"SelectionInfoUI: Auto-found DefenseText: {found.name}");
+                    }
+                }
+                
+                if (healthBar == null)
+                {
+                    var found = selectionPanel.transform.Find("HealthBar")?.GetComponent<Slider>();
+                    if (found != null)
+                    {
+                        healthBar = found;
+                        Debug.Log($"SelectionInfoUI: Auto-found HealthBar: {found.name}");
+                    }
+                }
+            }
+        }
+        
         private void OnDestroy()
         {
             // Unsubscribe from events
@@ -77,19 +219,9 @@ namespace TurnClash.UI
             }
         }
         
-        private void Update()
-        {
-            // Update UI if we have a selected unit
-            if (currentSelectedUnit != null)
-            {
-                UpdateUnitInfo();
-            }
-        }
-        
         private void OnUnitSelected(UnitSelectable selectedUnit)
         {
-            if (debugMode)
-                Debug.Log($"SelectionInfoUI: Unit selected - {selectedUnit?.name}");
+            Debug.Log($"SelectionInfoUI: OnUnitSelected called with unit: {selectedUnit?.name}");
             
             // For single selection, show the selected unit
             // For multiple selection, show the first/last selected unit
@@ -97,11 +229,22 @@ namespace TurnClash.UI
             
             if (selectionPanel != null)
             {
+                Debug.Log($"SelectionInfoUI: Showing panel (was active: {selectionPanel.activeSelf})");
                 selectionPanel.SetActive(true);
-                if (debugMode) Debug.Log("SelectionInfoUI: Panel shown");
+                Debug.Log($"SelectionInfoUI: Panel set to active (now active: {selectionPanel.activeSelf})");
+            }
+            else
+            {
+                Debug.LogError("SelectionInfoUI: selectionPanel is NULL! Cannot show UI.");
             }
             
-            // Force immediate update
+            // Add a small delay to ensure unit is fully initialized before updating UI
+            StartCoroutine(UpdateUIAfterFrame());
+        }
+        
+        private System.Collections.IEnumerator UpdateUIAfterFrame()
+        {
+            yield return null; // Wait one frame
             UpdateUnitInfo();
         }
         
@@ -127,14 +270,14 @@ namespace TurnClash.UI
         {
             if (currentSelectedUnit == null) 
             {
-                if (debugMode) Debug.LogWarning("SelectionInfoUI: currentSelectedUnit is null");
+                Debug.LogWarning("SelectionInfoUI: currentSelectedUnit is null");
                 return;
             }
             
             Unit unit = currentSelectedUnit.GetUnit();
             if (unit == null) 
             {
-                if (debugMode) Debug.LogWarning("SelectionInfoUI: Unit component is null");
+                Debug.LogError("SelectionInfoUI: Unit component is null! This should not happen with the new unified Unit component.");
                 return;
             }
             
@@ -148,11 +291,11 @@ namespace TurnClash.UI
             {
                 string displayName = !string.IsNullOrEmpty(unit.UnitName) ? unit.UnitName : "Unknown Unit";
                 unitNameText.text = displayName;
-                if (debugMode) Debug.Log($"SelectionInfoUI: Set unit name to '{displayName}'");
+                if (debugMode) Debug.Log($"SelectionInfoUI: Set unit name to '{displayName}' ✓");
             }
-            else if (debugMode)
+            else
             {
-                Debug.LogWarning("SelectionInfoUI: unitNameText is null!");
+                Debug.LogError("SelectionInfoUI: unitNameText is NULL! Cannot update unit name.");
             }
             
             // Update health info
@@ -162,34 +305,46 @@ namespace TurnClash.UI
             if (attackText != null)
             {
                 attackText.text = $"ATK: {unit.attack}";
-                if (debugMode) Debug.Log($"SelectionInfoUI: Set attack to 'ATK: {unit.attack}'");
+                if (debugMode) Debug.Log($"SelectionInfoUI: Set attack to 'ATK: {unit.attack}' ✓");
             }
-            else if (debugMode)
+            else
             {
-                Debug.LogWarning("SelectionInfoUI: attackText is null!");
+                Debug.LogError("SelectionInfoUI: attackText is NULL! Cannot update attack stat.");
             }
             
             // Update defense stat
             if (defenseText != null)
             {
                 defenseText.text = $"DEF: {unit.defense}";
-                if (debugMode) Debug.Log($"SelectionInfoUI: Set defense to 'DEF: {unit.defense}'");
+                if (debugMode) Debug.Log($"SelectionInfoUI: Set defense to 'DEF: {unit.defense}' ✓");
             }
-            else if (debugMode)
+            else
             {
-                Debug.LogWarning("SelectionInfoUI: defenseText is null!");
+                Debug.LogError("SelectionInfoUI: defenseText is NULL! Cannot update defense stat.");
             }
         }
         
         private void UpdateHealthDisplay(Unit unit)
         {
+            // Validate unit health values to prevent NaN errors
+            if (unit.maxHealth <= 0)
+            {
+                if (debugMode) 
+                    Debug.LogWarning($"SelectionInfoUI: Unit {unit.UnitName} has invalid maxHealth: {unit.maxHealth}. Skipping health display update.");
+                return;
+            }
+            
             // Update health text with current/max format
             if (healthText != null)
             {
                 healthText.text = $"{unit.health}/{unit.maxHealth}";
                 
-                // Color code health text
+                // Color code health text - safe division since we validated maxHealth > 0
                 float healthPercentage = (float)unit.health / unit.maxHealth;
+                
+                // Clamp health percentage to valid range
+                healthPercentage = Mathf.Clamp01(healthPercentage);
+                
                 if (healthPercentage > midHealthThreshold)
                     healthText.color = healthColorHigh;
                 else if (healthPercentage > lowHealthThreshold)
@@ -197,7 +352,9 @@ namespace TurnClash.UI
                 else
                     healthText.color = healthColorLow;
                     
-                if (debugMode) Debug.Log($"SelectionInfoUI: Set health text to '{unit.health}/{unit.maxHealth}' with {healthPercentage:P0} health");
+                // Reduce debug spam - only log if debug mode and percentage is valid
+                if (debugMode && !float.IsNaN(healthPercentage)) 
+                    Debug.Log($"SelectionInfoUI: Set health text to '{unit.health}/{unit.maxHealth}' with {healthPercentage:P0} health");
             }
             else if (debugMode)
             {
@@ -207,7 +364,11 @@ namespace TurnClash.UI
             // Update health bar
             if (healthBar != null)
             {
+                // Safe division since we validated maxHealth > 0
                 float healthPercentage = (float)unit.health / unit.maxHealth;
+                
+                // Clamp to valid range and handle edge cases
+                healthPercentage = Mathf.Clamp01(healthPercentage);
                 healthBar.value = healthPercentage;
                 
                 // Update health bar color
@@ -226,7 +387,9 @@ namespace TurnClash.UI
                     Debug.LogWarning("SelectionInfoUI: healthBar fillImage is null!");
                 }
                 
-                if (debugMode) Debug.Log($"SelectionInfoUI: Set health bar to {healthPercentage:P0}");
+                // Reduce debug spam
+                if (debugMode && !float.IsNaN(healthPercentage)) 
+                    Debug.Log($"SelectionInfoUI: Set health bar to {healthPercentage:P0}");
             }
             else if (debugMode)
             {
@@ -303,6 +466,29 @@ namespace TurnClash.UI
             {
                 Debug.Log("SelectionInfoUI: No unit selected to update");
             }
+        }
+        
+        /// <summary>
+        /// Call this method when unit stats change during gameplay to refresh the display
+        /// </summary>
+        public void RefreshCurrentSelection()
+        {
+            if (currentSelectedUnit != null)
+            {
+                UpdateUnitInfo();
+            }
+        }
+        
+        private void LogUIReferenceStatus(string context)
+        {
+            Debug.Log($"=== UI REFERENCE STATUS ({context}) ===");
+            Debug.Log($"selectionPanel: {(selectionPanel != null ? selectionPanel.name : "NULL")}");
+            Debug.Log($"unitNameText: {(unitNameText != null ? unitNameText.name : "NULL")}");
+            Debug.Log($"healthText: {(healthText != null ? healthText.name : "NULL")}");
+            Debug.Log($"healthBar: {(healthBar != null ? healthBar.name : "NULL")}");
+            Debug.Log($"attackText: {(attackText != null ? attackText.name : "NULL")}");
+            Debug.Log($"defenseText: {(defenseText != null ? defenseText.name : "NULL")}");
+            Debug.Log($"=== END STATUS ({context}) ===");
         }
     }
 } 

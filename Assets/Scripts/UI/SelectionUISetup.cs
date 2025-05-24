@@ -23,9 +23,34 @@ namespace TurnClash.UI
         
         private void Start()
         {
+            Debug.Log($"SelectionUISetup: Start() called with createUIOnStart = {createUIOnStart}");
+            
+            // SAFETY CHECK: Don't overwrite existing properly configured UI
             if (createUIOnStart)
             {
+                // Check if there's already a properly configured SelectionInfoUI
+                var existingUI = FindObjectOfType<SelectionInfoUI>();
+                if (existingUI != null)
+                {
+                    // Check if it has references assigned (indicating manual setup)
+                    var panelField = typeof(SelectionInfoUI).GetField("selectionPanel", 
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    var panel = panelField?.GetValue(existingUI);
+                    
+                    if (panel != null)
+                    {
+                        Debug.LogWarning("SelectionUISetup: Found existing SelectionInfoUI with assigned references. Skipping auto-creation to preserve manual setup.");
+                        Debug.LogWarning("SelectionUISetup: If you want to recreate the UI, manually call CreateSelectionUI() or disable the existing SelectionInfoUI component first.");
+                        return;
+                    }
+                }
+                
+                Debug.Log("SelectionUISetup: Auto-creating UI on start - this will OVERWRITE existing references!");
                 CreateSelectionUI();
+            }
+            else
+            {
+                Debug.Log("SelectionUISetup: NOT creating UI on start (createUIOnStart = false)");
             }
         }
         
