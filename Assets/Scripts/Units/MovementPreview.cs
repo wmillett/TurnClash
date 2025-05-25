@@ -15,7 +15,7 @@ namespace TurnClash.Units
         [SerializeField] private Color movementTileColor = new Color(0.2f, 1f, 0.2f, 0.7f); // Green glow
         [SerializeField] private Color attackTileColor = new Color(1f, 0.2f, 0.2f, 0.7f); // Red glow for attack
         [SerializeField] private int movementRange = 1; // How many tiles away can the unit move
-        [SerializeField] private bool debugPreview = false;
+        [SerializeField] private bool debugPreview = false; // Re-disabled after fixing turn change integration
         
         // Singleton instance
         private static MovementPreview instance;
@@ -79,6 +79,19 @@ namespace TurnClash.Units
                 Debug.Log("MovementPreview: Subscribed to selection events");
             }
             
+            // Subscribe to turn change events to hide preview when turn changes
+            if (turnManager != null)
+            {
+                turnManager.OnTurnStart += OnTurnStart;
+                turnManager.OnTurnEnd += OnTurnEnd;
+                Debug.Log("MovementPreview: Subscribed to turn change events");
+            }
+            else
+            {
+                // If TurnManager isn't ready yet, try to find it in the next frame
+                StartCoroutine(DelayedTurnManagerSubscription());
+            }
+            
             isApplicationQuitting = false;
             Debug.Log("MovementPreview: Start() called, ready for operations");
         }
@@ -122,6 +135,32 @@ namespace TurnClash.Units
         private void OnSelectionCleared()
         {
             HideMovementPreview();
+        }
+        
+        private void OnTurnStart(Unit.Player newPlayer)
+        {
+            // When a new turn starts, check if we should hide the preview
+            // This handles cases where a unit was selected but it's now the other player's turn
+            if (currentPreviewUnit != null)
+            {
+                if (!CanShowPreviewForUnit(currentPreviewUnit))
+                {
+                    if (debugPreview)
+                        Debug.Log($"MovementPreview: Hiding preview on turn start - {currentPreviewUnit.UnitName} cannot move on {newPlayer}'s turn");
+                    HideMovementPreview();
+                }
+            }
+        }
+        
+        private void OnTurnEnd(Unit.Player endingPlayer)
+        {
+            // When a turn ends, hide the preview to ensure clean transition
+            if (currentPreviewUnit != null && currentPreviewUnit.player == endingPlayer)
+            {
+                if (debugPreview)
+                    Debug.Log($"MovementPreview: Hiding preview on turn end - {endingPlayer}'s turn is ending");
+                HideMovementPreview();
+            }
         }
         
         private bool CanShowPreviewForUnit(Unit unit)
@@ -373,6 +412,57 @@ namespace TurnClash.Units
             movementRange = Mathf.Max(1, range);
         }
         
+        /// <summary>
+        /// Coroutine to subscribe to TurnManager events if it wasn't ready during Start()
+        /// </summary>
+        private System.Collections.IEnumerator DelayedTurnManagerSubscription()
+        {
+            float timeout = 5f;
+            float elapsed = 0f;
+            
+            while (elapsed < timeout && turnManager == null)
+            {
+                turnManager = TurnManager.Instance;
+                
+                if (turnManager != null)
+                {
+                    turnManager.OnTurnStart += OnTurnStart;
+                    turnManager.OnTurnEnd += OnTurnEnd;
+                    Debug.Log("MovementPreview: Delayed subscription to turn change events successful");
+                    yield break;
+                }
+                
+                yield return null;
+                elapsed += Time.deltaTime;
+            }
+            
+            if (turnManager == null)
+            {
+                Debug.LogWarning("MovementPreview: Failed to subscribe to TurnManager events - timeout reached");
+            }
+        }
+        
+        /// <summary>
+        /// Refresh the movement preview for the currently selected unit
+        /// Called when unit moves via arrow keys to update clickable tiles
+        /// </summary>
+        public void RefreshCurrentUnitPreview()
+        {
+            if (currentPreviewUnit != null && currentPreviewUnit.IsAlive() && CanShowPreviewForUnit(currentPreviewUnit))
+            {
+                if (debugPreview)
+                    Debug.Log($"MovementPreview: Refreshing preview for {currentPreviewUnit.UnitName} after arrow key movement");
+                ShowMovementPreview(currentPreviewUnit);
+            }
+            else if (currentPreviewUnit != null && !currentPreviewUnit.IsAlive())
+            {
+                // Unit died from combat, clear the preview
+                if (debugPreview)
+                    Debug.Log($"MovementPreview: Unit {currentPreviewUnit.UnitName} died, clearing preview");
+                HideMovementPreview();
+            }
+        }
+        
         private void OnDestroy()
         {
             if (debugPreview)
@@ -381,11 +471,18 @@ namespace TurnClash.Units
             // Clean up preview
             HideMovementPreview();
             
-            // Unsubscribe from events
+            // Unsubscribe from selection events
             if (UnitSelectionManager.Instance != null)
             {
                 UnitSelectionManager.Instance.OnUnitSelected -= OnUnitSelected;
                 UnitSelectionManager.Instance.OnSelectionCleared -= OnSelectionCleared;
+            }
+            
+            // Unsubscribe from turn events
+            if (turnManager != null)
+            {
+                turnManager.OnTurnStart -= OnTurnStart;
+                turnManager.OnTurnEnd -= OnTurnEnd;
             }
             
             // Clear singleton reference

@@ -11,8 +11,9 @@ namespace TurnClash.Units
         [Header("Movement Settings")]
         [SerializeField] private bool enableArrowKeyMovement = true;
         [SerializeField] private float inputCooldown = 0.2f; // Prevent rapid movement
-        [SerializeField] private bool debugMovement = false; // TEMPORARILY DISABLED for victory panel debugging
+        [SerializeField] private bool debugMovement = false; // Re-disabled after fixing turn change integration
         [SerializeField] private bool respectTurnSystem = true; // Whether to check turn system before allowing movement
+        [SerializeField] private bool workWithMovementPreview = true; // Allow both arrow keys and clickable tiles
         
         [Header("Combat Settings")]
         [SerializeField] private bool enableCombat = true; // Allow combat when moving to enemy tiles
@@ -94,13 +95,8 @@ namespace TurnClash.Units
                 return;
             }
             
-            // Check if movement preview is active - prioritize tile clicking over arrow keys
-            if (MovementPreview.Instance != null && HasMovementPreviewActive())
-            {
-                if (debugMovement)
-                    Debug.Log("UnitMovementController: Arrow keys disabled - movement preview is active (use tile clicking instead)");
-                return;
-            }
+            // Note: Removed the check that disabled arrow keys when movement preview is active
+            // Both systems (arrow keys and clickable tiles) should work together
             
             // Check each arrow key
             Vector2Int direction = Vector2Int.zero;
@@ -248,6 +244,14 @@ namespace TurnClash.Units
                     }
                 }
                 
+                // Refresh movement preview after successful arrow key movement
+                // This ensures the clickable tiles update to show new available moves from the new position
+                if (workWithMovementPreview && MovementPreview.Instance != null)
+                {
+                    // Refresh preview whether we moved or attacked - the preview system will handle dead units
+                    MovementPreview.Instance.RefreshCurrentUnitPreview();
+                }
+                
                 if (debugMovement)
                 {
                     if (enemyAtTarget != null)
@@ -305,6 +309,16 @@ namespace TurnClash.Units
             enableCombat = enabled;
             if (debugMovement)
                 Debug.Log($"UnitMovementController: Combat system {(enabled ? "enabled" : "disabled")}");
+        }
+        
+        /// <summary>
+        /// Enable or disable working with movement preview system
+        /// </summary>
+        public void SetWorkWithMovementPreview(bool enabled)
+        {
+            workWithMovementPreview = enabled;
+            if (debugMovement)
+                Debug.Log($"UnitMovementController: Movement preview cooperation {(enabled ? "enabled" : "disabled")}");
         }
         
         /// <summary>
@@ -429,6 +443,7 @@ namespace TurnClash.Units
         
         /// <summary>
         /// Check if movement preview is currently showing highlighted tiles
+        /// Note: This no longer blocks arrow key input - both systems work together
         /// </summary>
         private bool HasMovementPreviewActive()
         {

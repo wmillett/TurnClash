@@ -278,6 +278,7 @@ namespace TurnClash.UI
         
         private void UpdateUnitInfo()
         {
+            // Ensure we're on the main thread before updating UI
             if (currentSelectedUnit == null) 
             {
                 Debug.LogWarning("SelectionInfoUI: currentSelectedUnit is null");

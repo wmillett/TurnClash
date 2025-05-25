@@ -307,8 +307,17 @@ public class GameManager : MonoBehaviour
     /// </summary>
     public void ResetGame()
     {
+        // Ensure this runs on the main thread
+        if (!Application.isPlaying) return;
+        
         Debug.Log("🔄 Resetting game - reloading scene...");
         
+        // Use coroutine to ensure proper timing and main thread execution
+        StartCoroutine(ResetGameCoroutine());
+    }
+    
+    private System.Collections.IEnumerator ResetGameCoroutine()
+    {
         // Mark that scene is unloading to prevent singleton creation during cleanup
         UnitSelectionManager.MarkSceneUnloading();
         
@@ -333,11 +342,14 @@ public class GameManager : MonoBehaviour
             UnitSelectionManager.Instance.ClearSelection();
         }
         
+        // Wait a frame to ensure all cleanup is processed
+        yield return null;
+        
         // Get current scene name and reload it
         string currentSceneName = SceneManager.GetActiveScene().name;
         Debug.Log($"Reloading scene: {currentSceneName}");
         
-        // Reload the current scene
+        // Reload the current scene (this will happen on the main thread)
         SceneManager.LoadScene(currentSceneName);
     }
 } 

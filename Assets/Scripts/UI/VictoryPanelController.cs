@@ -316,6 +316,15 @@ namespace TurnClash.UI
             
             Debug.Log($"✅ VICTORY PANEL: Components validated, showing panel for {winner}");
 
+            // Use coroutine to ensure UI updates happen on main thread with proper timing
+            StartCoroutine(ShowVictoryScreenCoroutine(winner));
+        }
+        
+        private System.Collections.IEnumerator ShowVictoryScreenCoroutine(Unit.Player winner)
+        {
+            // Wait a frame to ensure we're on the main thread
+            yield return null;
+            
             // Show the victory panel
             if (victoryPanel != null)
             {
@@ -325,6 +334,7 @@ namespace TurnClash.UI
             else
             {
                 Debug.LogError("❌ VICTORY PANEL: victoryPanel is NULL!");
+                yield break;
             }
             
             // Update victory text
@@ -342,22 +352,25 @@ namespace TurnClash.UI
                 displayText = string.Format(victoryTextFormat, winnerName);
             }
             
-            victoryText.text = displayText;
-            
-            if (!useRichText)
+            if (victoryText != null)
             {
-                victoryText.color = winnerColor;
-            }
-            else
-            {
-                victoryText.color = Color.white; // Let rich text handle the coloring
-            }
-            
-            // Add statistics if enabled
-            if (showStatistics && combatManager != null)
-            {
-                displayText += "\n\n" + combatManager.GetCombatStatistics();
                 victoryText.text = displayText;
+                
+                if (!useRichText)
+                {
+                    victoryText.color = winnerColor;
+                }
+                else
+                {
+                    victoryText.color = Color.white; // Let rich text handle the coloring
+                }
+                
+                // Add statistics if enabled
+                if (showStatistics && combatManager != null)
+                {
+                    displayText += "\n\n" + combatManager.GetCombatStatistics();
+                    victoryText.text = displayText;
+                }
             }
             
             Debug.Log($"🏆 Victory screen displayed for {winner}!");
