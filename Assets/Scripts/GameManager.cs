@@ -11,6 +11,7 @@ public class GameManager : MonoBehaviour
     [SerializeField] private UnitMovementController movementController;
     [SerializeField] private TurnManager turnManager;
     [SerializeField] private CombatManager combatManager;
+    [SerializeField] private MovementPreview movementPreview;
     
     [Header("Reset Settings")]
     [SerializeField] private bool allowReset = true;
@@ -89,6 +90,14 @@ public class GameManager : MonoBehaviour
         // Initialize UnitSelectionManager (often needed by UI)
         Debug.Log("GameManager: Initializing UnitSelectionManager...");
         var selectionManager = UnitSelectionManager.Instance;
+        
+        // Initialize movement preview if not assigned
+        if (movementPreview == null)
+        {
+            // Force singleton creation
+            Debug.Log("GameManager: Initializing MovementPreview...");
+            movementPreview = MovementPreview.Instance;
+        }
         
         Debug.Log("GameManager: All singletons initialized and ready");
     }
@@ -269,6 +278,11 @@ public class GameManager : MonoBehaviour
     public CombatManager GetCombatManager()
     {
         return combatManager;
+    }
+    
+    public MovementPreview GetMovementPreview()
+    {
+        return movementPreview;
     }
     
     /// <summary>

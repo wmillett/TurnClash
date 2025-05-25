@@ -15,7 +15,14 @@ public class IsometricGroundTile : MonoBehaviour
         if (meshRenderer == null)
             meshRenderer = GetComponent<MeshRenderer>();
         if (boxCollider == null)
+        {
             boxCollider = GetComponent<BoxCollider>();
+            // If no collider exists, create one for click detection
+            if (boxCollider == null)
+            {
+                boxCollider = gameObject.AddComponent<BoxCollider>();
+            }
+        }
 
         // Store default material
         if (meshRenderer != null)
@@ -27,8 +34,13 @@ public class IsometricGroundTile : MonoBehaviour
         gridPosition = position;
         isWalkable = walkable;
             
+        // Keep colliders enabled for click detection
+        // Colliders are needed for both walkable (for movement preview clicks) and non-walkable tiles
         if (boxCollider != null)
-            boxCollider.enabled = !walkable;
+        {
+            boxCollider.enabled = true; // Always enabled for click detection
+            boxCollider.isTrigger = walkable; // Walkable tiles are triggers, non-walkable are solid
+        }
     }
 
     public Vector2Int GetGridPosition() => gridPosition;
@@ -59,6 +71,9 @@ public class IsometricGroundTile : MonoBehaviour
     {
         isWalkable = walkable;
         if (boxCollider != null)
-            boxCollider.enabled = !walkable;
+        {
+            boxCollider.enabled = true; // Always enabled for click detection
+            boxCollider.isTrigger = walkable; // Walkable tiles are triggers, non-walkable are solid
+        }
     }
 } 

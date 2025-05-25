@@ -94,6 +94,14 @@ namespace TurnClash.Units
                 return;
             }
             
+            // Check if movement preview is active - prioritize tile clicking over arrow keys
+            if (MovementPreview.Instance != null && HasMovementPreviewActive())
+            {
+                if (debugMovement)
+                    Debug.Log("UnitMovementController: Arrow keys disabled - movement preview is active (use tile clicking instead)");
+                return;
+            }
+            
             // Check each arrow key
             Vector2Int direction = Vector2Int.zero;
             bool inputDetected = false;
@@ -417,6 +425,34 @@ namespace TurnClash.Units
             }
             
             return false; // If no combat manager found, assume game is still active
+        }
+        
+        /// <summary>
+        /// Check if movement preview is currently showing highlighted tiles
+        /// </summary>
+        private bool HasMovementPreviewActive()
+        {
+            // Check if there's a selected unit that would have movement preview
+            UnitSelectionManager selectionManager = UnitSelectionManager.Instance;
+            if (selectionManager == null || !selectionManager.HasSelection)
+                return false;
+                
+            UnitSelectable selectedUnitSelectable = selectionManager.FirstSelectedUnit;
+            if (selectedUnitSelectable == null)
+                return false;
+                
+            Unit selectedUnit = selectedUnitSelectable.GetComponent<Unit>();
+            if (selectedUnit == null)
+                return false;
+                
+            // Check if it's the current player's turn and they can move
+            TurnManager turnManager = TurnManager.Instance;
+            if (turnManager != null)
+            {
+                return turnManager.CurrentPlayer == selectedUnit.player && turnManager.CanUnitMove(selectedUnit);
+            }
+            
+            return false;
         }
         
         private void OnDestroy()
