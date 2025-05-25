@@ -631,4 +631,4 @@ namespace TurnClash.Units
             return !isDefending;
         }
     }
-} 
+}

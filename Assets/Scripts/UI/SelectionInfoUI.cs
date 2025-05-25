@@ -29,6 +29,8 @@ namespace TurnClash.UI
         [SerializeField] private bool debugMode = false; // TEMPORARILY DISABLED for victory panel debugging
         
         private UnitSelectable currentSelectedUnit;
+        private Unit currentDisplayedUnit; // Track what unit we're currently displaying
+        private bool isShowingHover = false; // Track if we're showing hover vs selection
         
         private void Awake()
         {
@@ -244,29 +246,56 @@ namespace TurnClash.UI
         {
             Debug.Log($"SelectionInfoUI: OnUnitSelected called with unit: {selectedUnit?.name}");
             
-            // For single selection, show the selected unit
-            // For multiple selection, show the first/last selected unit
             currentSelectedUnit = selectedUnit;
             
+            // Notify the hover tooltip system about selection change
+            UnitHoverTooltip.OnSelectionChanged();
+        }
+        
+        /// <summary>
+        /// Show unit info for a specific unit (called by hover tooltip system)
+        /// </summary>
+        public void ShowUnitInfo(Unit unit, bool isHover = false)
+        {
+            if (unit == null)
+            {
+                HideUnitInfo();
+                return;
+            }
+            
+            currentDisplayedUnit = unit;
+            isShowingHover = isHover;
+            
+            // Show the panel
             if (selectionPanel != null)
             {
-                Debug.Log($"SelectionInfoUI: Showing panel (was active: {selectionPanel.activeSelf})");
                 selectionPanel.SetActive(true);
-                Debug.Log($"SelectionInfoUI: Panel set to active (now active: {selectionPanel.activeSelf})");
+                if (debugMode)
+                    Debug.Log($"SelectionInfoUI: Showing {(isHover ? "hover" : "selection")} info for {unit.UnitName}");
+            }
+            
+            // Update the UI with unit info
+            UpdateUnitInfo(unit, isHover);
+        }
+        
+        /// <summary>
+        /// Hide the unit info UI
+        /// </summary>
+        public void HideUnitInfo()
+        {
+            currentDisplayedUnit = null;
+            isShowingHover = false;
+            
+            if (hideWhenNoSelection && selectionPanel != null)
+            {
+                selectionPanel.SetActive(false);
+                if (debugMode)
+                    Debug.Log("SelectionInfoUI: Panel hidden");
             }
             else
             {
-                Debug.LogError("SelectionInfoUI: selectionPanel is NULL! Cannot show UI.");
+                ClearUnitInfo();
             }
-            
-            // Add a small delay to ensure unit is fully initialized before updating UI
-            StartCoroutine(UpdateUIAfterFrame());
-        }
-        
-        private System.Collections.IEnumerator UpdateUIAfterFrame()
-        {
-            yield return null; // Wait one frame
-            UpdateUnitInfo();
         }
         
         private void OnSelectionCleared()
@@ -276,36 +305,21 @@ namespace TurnClash.UI
             
             currentSelectedUnit = null;
             
-            if (hideWhenNoSelection && selectionPanel != null)
-            {
-                selectionPanel.SetActive(false);
-                if (debugMode) Debug.Log("SelectionInfoUI: Panel hidden");
-            }
-            else
-            {
-                ClearUnitInfo();
-            }
+            // Notify the hover tooltip system about selection change
+            UnitHoverTooltip.OnSelectionChanged();
         }
         
-        private void UpdateUnitInfo()
+        private void UpdateUnitInfo(Unit unit, bool isHover)
         {
-            // Ensure we're on the main thread before updating UI
-            if (currentSelectedUnit == null) 
-            {
-                Debug.LogWarning("SelectionInfoUI: currentSelectedUnit is null");
-                return;
-            }
-            
-            Unit unit = currentSelectedUnit.GetUnit();
             if (unit == null) 
             {
-                Debug.LogError("SelectionInfoUI: Unit component is null! This should not happen with the new unified Unit component.");
+                Debug.LogWarning("SelectionInfoUI: unit is null");
                 return;
             }
             
             if (debugMode)
             {
-                Debug.Log($"SelectionInfoUI: Updating UI for {unit.UnitName} - HP:{unit.health}/{unit.maxHealth}, ATK:{unit.attack}, DEF:{unit.defence}");
+                Debug.Log($"SelectionInfoUI: Updating UI for {unit.UnitName} ({(isHover ? "hover" : "selection")}) - HP:{unit.health}/{unit.maxHealth}, ATK:{unit.attack}, DEF:{unit.defence}");
             }
             
             // Update unit name - use the UnitName property instead of GameObject name
@@ -314,7 +328,7 @@ namespace TurnClash.UI
                 string displayName = !string.IsNullOrEmpty(unit.UnitName) ? unit.UnitName : "Unknown Unit";
                 unitNameText.text = displayName;
                 
-                // Set the unit name color to match the player's color
+                // Set the unit name color to match the player's color (same for both hover and selection)
                 Color playerColor = GetPlayerColor(unit.player);
                 unitNameText.color = playerColor;
                 
@@ -508,14 +522,14 @@ namespace TurnClash.UI
         [ContextMenu("Force Update UI")]
         public void ForceUpdateUI()
         {
-            if (currentSelectedUnit != null)
+            if (currentDisplayedUnit != null)
             {
                 Debug.Log("SelectionInfoUI: Forcing UI update...");
-                UpdateUnitInfo();
+                UpdateUnitInfo(currentDisplayedUnit, isShowingHover);
             }
             else
             {
-                Debug.Log("SelectionInfoUI: No unit selected to update");
+                Debug.Log("SelectionInfoUI: No unit displayed to update");
             }
         }
         
@@ -524,9 +538,9 @@ namespace TurnClash.UI
         /// </summary>
         public void RefreshCurrentSelection()
         {
-            if (currentSelectedUnit != null)
+            if (currentDisplayedUnit != null)
             {
-                UpdateUnitInfo();
+                UpdateUnitInfo(currentDisplayedUnit, isShowingHover);
             }
         }
         

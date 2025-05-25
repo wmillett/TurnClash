@@ -1,6 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 using TurnClash.Units;
+using TurnClash.UI;
 
 namespace TurnClash.Units
 {
@@ -393,12 +394,46 @@ namespace TurnClash.Units
                 Debug.Log($"UnitSelectable {name}: Visual state restoration complete");
         }
         
+        /// <summary>
+        /// Called when mouse enters the unit for hover tooltips
+        /// </summary>
+        private void OnMouseEnter()
+        {
+            if (unit != null)
+            {
+                UnitHoverTooltip.OnUnitHoverEnter(unit);
+                
+                if (debugVisualEffects)
+                    Debug.Log($"UnitSelectable {name}: Mouse entered, triggering hover tooltip");
+            }
+        }
+        
+        /// <summary>
+        /// Called when mouse exits the unit for hover tooltips
+        /// </summary>
+        private void OnMouseExit()
+        {
+            if (unit != null)
+            {
+                UnitHoverTooltip.OnUnitHoverExit(unit);
+                
+                if (debugVisualEffects)
+                    Debug.Log($"UnitSelectable {name}: Mouse exited, clearing hover tooltip");
+            }
+        }
+        
         private void OnDestroy()
         {
             // Clean up when destroyed
             if (isSelected)
             {
                 UnitSelectionManager.Instance?.DeselectUnit(this);
+            }
+            
+            // Clear any hover tooltip
+            if (unit != null)
+            {
+                UnitHoverTooltip.OnUnitHoverExit(unit);
             }
         }
     }
