@@ -3,7 +3,8 @@ using UnityEngine;
 public class ToggleMenu : MonoBehaviour
 {
     [SerializeField] private KeyCode codexKey = KeyCode.C;
-    [SerializeField] private bool debugToggle = false;
+    [SerializeField] private bool debugToggle = true; // Enable debug to troubleshoot C key
+    [SerializeField] private bool enableKeyboardToggle = true; // Re-enabled for proper C key functionality
     
     private GameObject codexPanel;
     private CodexPanelManager codexManager;
@@ -54,9 +55,13 @@ public class ToggleMenu : MonoBehaviour
 
     private void Update()
     {
-        // Only process input if codex system is available
-        if (!codexSystemAvailable)
+        // Only process input if codex system is available and keyboard toggle is enabled
+        if (!codexSystemAvailable || !enableKeyboardToggle)
+        {
+            if (debugToggle && Input.GetKeyDown(codexKey))
+                Debug.Log($"ToggleMenu: C key pressed but system not available (available: {codexSystemAvailable}, enabled: {enableKeyboardToggle})");
             return;
+        }
             
         // Check for keyboard input
         bool isKeyPressed = Input.GetKey(codexKey);
@@ -64,6 +69,8 @@ public class ToggleMenu : MonoBehaviour
         // Only toggle when the key is first pressed (not held)
         if (isKeyPressed && !wasKeyPressed)
         {
+            if (debugToggle)
+                Debug.Log("ToggleMenu: C key detected, calling ToggleCodex()");
             ToggleCodex();
         }
         

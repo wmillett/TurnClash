@@ -382,7 +382,7 @@ public class CodexUISetup
             
             // Configure layout group for responsive button sizing
             layoutGroup.childAlignment = TextAnchor.MiddleCenter;
-            layoutGroup.spacing = 3; // Small spacing between buttons
+            layoutGroup.spacing = 1; // Reduced spacing between buttons for more room
             layoutGroup.padding = new RectOffset(5, 5, 3, 3); // Small padding
             layoutGroup.childControlHeight = false; // Don't force control height
             layoutGroup.childControlWidth = false;  // Don't force control width
@@ -426,25 +426,28 @@ public class CodexUISetup
                     layoutElement.flexibleHeight = 0;   // No flexible growth
                 }
                 
-                // Configure button text for proper scaling
+                // Configure button text for better readability
                 TextMeshProUGUI buttonText = button.GetComponentInChildren<TextMeshProUGUI>();
                 if (buttonText != null)
                 {
-                    // Enable auto-sizing for text with better quality
-                    buttonText.enableAutoSizing = true;
-                    buttonText.fontSizeMin = 6;
-                    buttonText.fontSizeMax = 10;
-                    buttonText.fontSize = 8; // Base font size
+                    // Disable auto-sizing to prevent distortion
+                    buttonText.enableAutoSizing = false;
+                    buttonText.fontSize = 5; // Even smaller font size to fit longer words like "Organizations"
                     
-                    // Ensure text fits within button bounds
+                    // Set text alignment and overflow settings
+                    buttonText.alignment = TextAlignmentOptions.Center;
+                    buttonText.overflowMode = TextOverflowModes.Truncate; // Cut off text that doesn't fit
+                    buttonText.enableWordWrapping = false; // Prevent word wrapping in small buttons
+                    
+                    // Ensure text fits within button bounds with better margins
                     RectTransform textRect = buttonText.GetComponent<RectTransform>();
                     if (textRect != null)
                     {
-                        // Fill the button but with small margins
+                        // Fill the button with slightly larger margins for better readability
                         textRect.anchorMin = Vector2.zero;
                         textRect.anchorMax = Vector2.one;
-                        textRect.offsetMin = new Vector2(2, 2);
-                        textRect.offsetMax = new Vector2(-2, -2);
+                        textRect.offsetMin = new Vector2(2, 2); // Slightly larger margins
+                        textRect.offsetMax = new Vector2(-3, -3);
                     }
                 }
                 
@@ -610,19 +613,13 @@ public class CodexUISetup
                         contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
                         contentSizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
                         
-                        // Add VerticalLayoutGroup for proper content organization
-                        VerticalLayoutGroup contentLayoutGroup = contentRect.GetComponent<VerticalLayoutGroup>();
-                        if (contentLayoutGroup == null)
+                        // Remove VerticalLayoutGroup as it can interfere with text wrapping
+                        VerticalLayoutGroup existingLayoutGroup = contentRect.GetComponent<VerticalLayoutGroup>();
+                        if (existingLayoutGroup != null)
                         {
-                            contentLayoutGroup = contentRect.gameObject.AddComponent<VerticalLayoutGroup>();
+                            UnityEngine.Object.Destroy(existingLayoutGroup);
+                            Debug.Log("CodexUISetup: Removed VerticalLayoutGroup from EntryScrollView content to prevent text wrapping issues");
                         }
-                        contentLayoutGroup.childAlignment = TextAnchor.UpperCenter;
-                        contentLayoutGroup.spacing = 10;
-                        contentLayoutGroup.padding = new RectOffset(10, 10, 10, 10);
-                        contentLayoutGroup.childControlWidth = true;
-                        contentLayoutGroup.childControlHeight = false;
-                        contentLayoutGroup.childForceExpandWidth = true;
-                        contentLayoutGroup.childForceExpandHeight = false;
                     }
                 }
                 

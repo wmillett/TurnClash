@@ -395,30 +395,40 @@ namespace TurnClash.Units
         }
         
         /// <summary>
-        /// Called when mouse enters the unit for hover tooltips
+        /// Called when mouse enters the unit - show hover info in SelectionInfoUI
         /// </summary>
         private void OnMouseEnter()
         {
             if (unit != null)
             {
-                UnitHoverTooltip.OnUnitHoverEnter(unit);
+                // Find SelectionInfoUI and show hover info
+                var selectionUI = FindObjectOfType<SelectionInfoUI>();
+                if (selectionUI != null)
+                {
+                    selectionUI.ShowUnitInfo(unit, isHover: true);
+                }
                 
                 if (debugVisualEffects)
-                    Debug.Log($"UnitSelectable {name}: Mouse entered, triggering hover tooltip");
+                    Debug.Log($"UnitSelectable {name}: Mouse entered, showing hover info");
             }
         }
         
         /// <summary>
-        /// Called when mouse exits the unit for hover tooltips
+        /// Called when mouse exits the unit - restore selection info or hide
         /// </summary>
         private void OnMouseExit()
         {
             if (unit != null)
             {
-                UnitHoverTooltip.OnUnitHoverExit(unit);
+                // Find SelectionInfoUI and restore proper state
+                var selectionUI = FindObjectOfType<SelectionInfoUI>();
+                if (selectionUI != null)
+                {
+                    selectionUI.OnHoverExit();
+                }
                 
                 if (debugVisualEffects)
-                    Debug.Log($"UnitSelectable {name}: Mouse exited, clearing hover tooltip");
+                    Debug.Log($"UnitSelectable {name}: Mouse exited, restoring selection info");
             }
         }
         
@@ -428,12 +438,6 @@ namespace TurnClash.Units
             if (isSelected)
             {
                 UnitSelectionManager.Instance?.DeselectUnit(this);
-            }
-            
-            // Clear any hover tooltip
-            if (unit != null)
-            {
-                UnitHoverTooltip.OnUnitHoverExit(unit);
             }
         }
     }

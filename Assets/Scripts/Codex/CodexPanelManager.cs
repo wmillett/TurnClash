@@ -602,11 +602,19 @@ public class CodexPanelManager : MonoBehaviour
                             contentText = content.gameObject.AddComponent<TextMeshProUGUI>();
                         }
                         
-                        // Configure the text component
+                        // Configure the text component for proper wrapping
                         contentText.text = entry.description;
-                        contentText.fontSize = 16;
+                        contentText.fontSize = 14;
                         contentText.color = Color.white;
-                        contentText.alignment = TextAlignmentOptions.Left;
+                        contentText.alignment = TextAlignmentOptions.TopLeft;
+                        
+                        // Enable text wrapping and overflow handling
+                        contentText.enableWordWrapping = true;
+                        contentText.overflowMode = TextOverflowModes.Overflow; // Allow vertical overflow for scrolling
+                        contentText.textWrappingMode = TextWrappingModes.Normal;
+                        
+                        // Set margins for better readability
+                        contentText.margin = new Vector4(10, 10, 10, 10);
                         
                         // Add ContentSizeFitter to automatically adjust height
                         ContentSizeFitter sizeFitter = content.gameObject.GetComponent<ContentSizeFitter>();
@@ -617,13 +625,17 @@ public class CodexPanelManager : MonoBehaviour
                         sizeFitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
                         sizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
                         
-                        // Set up the content's RectTransform
+                        // Set up the content's RectTransform for proper text wrapping
                         RectTransform contentRect = content.GetComponent<RectTransform>();
                         contentRect.anchorMin = new Vector2(0, 1);
                         contentRect.anchorMax = new Vector2(1, 1);
                         contentRect.pivot = new Vector2(0.5f, 1);
                         contentRect.anchoredPosition = Vector2.zero;
+                        
+                        // Set width to fill container, height will be determined by ContentSizeFitter
                         contentRect.sizeDelta = new Vector2(0, 0);
+                        contentRect.offsetMin = new Vector2(0, contentRect.offsetMin.y); // Left edge
+                        contentRect.offsetMax = new Vector2(0, contentRect.offsetMax.y); // Right edge
                     }
                     else
                     {
@@ -645,23 +657,34 @@ public class CodexPanelManager : MonoBehaviour
             Debug.LogError("EntryPage is null!");
         }
         
+        // Handle image loading
         if (!string.IsNullOrEmpty(entry.imagePath))
         {
-            Sprite sprite = Resources.Load<Sprite>(entry.imagePath);
+            Debug.Log($"Attempting to load image for entry: {entry.title} with path: {entry.imagePath}");
+            
+            // Try to load the image with different extensions
+            Sprite sprite = LoadImageWithExtensions(entry.imagePath);
             if (sprite != null)
             {
                 entryImage.sprite = sprite;
                 entryImage.gameObject.SetActive(true);
+                
+                // Configure image to maintain aspect ratio and fit properly
+                entryImage.preserveAspect = true;
+                entryImage.type = Image.Type.Simple;
+                
+                Debug.Log($"✅ Successfully loaded and assigned image: {entry.imagePath}");
             }
             else
             {
                 entryImage.gameObject.SetActive(false);
-                Debug.LogWarning($"Image not found: {entry.imagePath}");
+                Debug.LogWarning($"❌ Image not found: {entry.imagePath} (tried multiple loading methods)");
             }
         }
         else
         {
             entryImage.gameObject.SetActive(false);
+            Debug.Log($"No image path specified for entry: {entry.title}");
         }
         
         ShowEntryPage();
@@ -718,6 +741,130 @@ public class CodexPanelManager : MonoBehaviour
         if (menuScrollView == null) Debug.LogError("MenuScrollView not found!");
         if (entryScrollView == null) Debug.LogError("EntryScrollView not found!");
         Debug.Log("VerifyReferences: All references verified successfully");
+    }
+    
+    /// <summary>
+    /// Try to load an image with different file extensions
+    /// </summary>
+    private Sprite LoadImageWithExtensions(string basePath)
+    {
+        Debug.Log($"🔍 LoadImageWithExtensions called with basePath: {basePath}");
+        
+        // First try to load as sprite directly
+        Debug.Log($"🔍 Step 1: Trying to load as sprite...");
+        Sprite sprite = TryLoadAsSprite(basePath);
+        if (sprite != null)
+        {
+            Debug.Log($"✅ Successfully loaded as sprite!");
+            return sprite;
+        }
+        
+        // If sprite loading fails, try loading as texture and convert to sprite
+        Debug.Log($"🔍 Step 2: Trying to load as texture and convert...");
+        sprite = TryLoadAsTextureAndConvert(basePath);
+        if (sprite != null)
+        {
+            Debug.Log($"✅ Successfully loaded as texture and converted to sprite!");
+            return sprite;
+        }
+        
+        Debug.LogWarning($"❌ Could not find image at any of the attempted paths for: {basePath}");
+        return null;
+    }
+    
+    /// <summary>
+    /// Try to load image as sprite directly from Resources
+    /// </summary>
+    private Sprite TryLoadAsSprite(string basePath)
+    {
+        string[] extensions = { "", ".jpg", ".png", ".jpeg", ".JPG", ".PNG", ".JPEG" };
+        
+        foreach (string extension in extensions)
+        {
+            string fullPath = basePath + extension;
+            Debug.Log($"Trying to load as sprite: {fullPath}");
+            
+            Sprite sprite = Resources.Load<Sprite>(fullPath);
+            if (sprite != null)
+            {
+                Debug.Log($"✅ Found sprite at: {fullPath}");
+                return sprite;
+            }
+            else
+            {
+                Debug.Log($"❌ No sprite found at: {fullPath}");
+            }
+        }
+        
+        return null;
+    }
+    
+    /// <summary>
+    /// Try to load image as texture and convert to sprite
+    /// </summary>
+    private Sprite TryLoadAsTextureAndConvert(string basePath)
+    {
+        string[] extensions = { "", ".jpg", ".png", ".jpeg", ".JPG", ".PNG", ".JPEG" };
+        
+        foreach (string extension in extensions)
+        {
+            string fullPath = basePath + extension;
+            Debug.Log($"Trying to load as texture: {fullPath}");
+            
+            // Try loading as Texture2D
+            Texture2D texture = Resources.Load<Texture2D>(fullPath);
+            if (texture != null)
+            {
+                Debug.Log($"✅ Found texture at: {fullPath}, converting to sprite");
+                
+                // Create sprite from texture
+                Sprite sprite = Sprite.Create(
+                    texture,
+                    new Rect(0, 0, texture.width, texture.height),
+                    new Vector2(0.5f, 0.5f), // Pivot at center
+                    100.0f // Pixels per unit
+                );
+                
+                return sprite;
+            }
+            
+            // Try loading as TextAsset (for raw image data)
+            TextAsset textAsset = Resources.Load<TextAsset>(fullPath);
+            if (textAsset != null)
+            {
+                Debug.Log($"✅ Found image data at: {fullPath}, loading as texture");
+                
+                // Create a new texture
+                Texture2D texture2D = new Texture2D(2, 2);
+                
+                // Load image data into texture using ImageConversion
+                if (ImageConversion.LoadImage(texture2D, textAsset.bytes))
+                {
+                    Debug.Log($"✅ Successfully loaded image data from: {fullPath}");
+                    
+                    // Create sprite from texture
+                    Sprite sprite = Sprite.Create(
+                        texture2D,
+                        new Rect(0, 0, texture2D.width, texture2D.height),
+                        new Vector2(0.5f, 0.5f), // Pivot at center
+                        100.0f // Pixels per unit
+                    );
+                    
+                    return sprite;
+                }
+                else
+                {
+                    Debug.LogWarning($"❌ Failed to load image data from: {fullPath}");
+                    UnityEngine.Object.Destroy(texture2D);
+                }
+            }
+            else
+            {
+                Debug.Log($"❌ No TextAsset found at: {fullPath}");
+            }
+        }
+        
+        return null;
     }
     
     /// <summary>

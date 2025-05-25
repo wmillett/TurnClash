@@ -248,8 +248,15 @@ namespace TurnClash.UI
             
             currentSelectedUnit = selectedUnit;
             
-            // Notify the hover tooltip system about selection change
-            UnitHoverTooltip.OnSelectionChanged();
+            // Show the selected unit's info
+            if (selectedUnit != null)
+            {
+                Unit unit = selectedUnit.GetComponent<Unit>();
+                if (unit != null)
+                {
+                    ShowUnitInfo(unit, isHover: false);
+                }
+            }
         }
         
         /// <summary>
@@ -298,6 +305,36 @@ namespace TurnClash.UI
             }
         }
         
+        /// <summary>
+        /// Called when mouse exits a unit - restore selection info or hide panel
+        /// </summary>
+        public void OnHoverExit()
+        {
+            // If we were showing hover info, restore to selection or hide
+            if (isShowingHover)
+            {
+                isShowingHover = false;
+                
+                // Check if we have a selected unit to show instead
+                if (currentSelectedUnit != null)
+                {
+                    Unit selectedUnit = currentSelectedUnit.GetComponent<Unit>();
+                    if (selectedUnit != null)
+                    {
+                        ShowUnitInfo(selectedUnit, isHover: false);
+                        if (debugMode)
+                            Debug.Log("SelectionInfoUI: Hover exited, restored selection info");
+                        return;
+                    }
+                }
+                
+                // No selection, hide the panel
+                HideUnitInfo();
+                if (debugMode)
+                    Debug.Log("SelectionInfoUI: Hover exited, no selection to restore");
+            }
+        }
+        
         private void OnSelectionCleared()
         {
             if (debugMode)
@@ -305,8 +342,8 @@ namespace TurnClash.UI
             
             currentSelectedUnit = null;
             
-            // Notify the hover tooltip system about selection change
-            UnitHoverTooltip.OnSelectionChanged();
+            // Hide the unit info when selection is cleared
+            HideUnitInfo();
         }
         
         private void UpdateUnitInfo(Unit unit, bool isHover)
@@ -326,13 +363,20 @@ namespace TurnClash.UI
             if (unitNameText != null)
             {
                 string displayName = !string.IsNullOrEmpty(unit.UnitName) ? unit.UnitName : "Unknown Unit";
-                unitNameText.text = displayName;
+                unitNameText.text = displayName; // Clean name for both hover and selection
                 
-                // Set the unit name color to match the player's color (same for both hover and selection)
+                // Set the unit name color to match the player's color
                 Color playerColor = GetPlayerColor(unit.player);
+                
+                // Make hover slightly brighter to distinguish from selection
+                if (isHover)
+                {
+                    playerColor = Color.Lerp(playerColor, Color.white, 0.3f); // Brighten for hover
+                }
+                
                 unitNameText.color = playerColor;
                 
-                if (debugMode) Debug.Log($"SelectionInfoUI: Set unit name to '{displayName}' with {unit.player} color ✓");
+                if (debugMode) Debug.Log($"SelectionInfoUI: Set unit name to '{displayName}' with {unit.player} color ({(isHover ? "hover" : "selection")}) ✓");
             }
             else
             {

@@ -7,6 +7,8 @@ public class CodexToggleButton : MonoBehaviour, IPointerClickHandler
 {
     [SerializeField] private GameObject codexPanel;
     [SerializeField] private KeyCode toggleKey = KeyCode.C;
+    [SerializeField] private bool debugToggle = false;
+    [SerializeField] private bool enableKeyboardInput = false; // Disabled to avoid conflicts with ToggleMenu
     private CodexPanelManager codexManager;
     private bool wasKeyPressed = false;
 
@@ -29,16 +31,25 @@ public class CodexToggleButton : MonoBehaviour, IPointerClickHandler
             Debug.LogError("CodexPanelManager not found on CodexPanel!");
             return;
         }
+        
+        if (debugToggle)
+            Debug.Log($"CodexToggleButton: Initialized successfully, listening for {toggleKey} key");
     }
 
     private void Update()
     {
+        // Only handle keyboard input if enabled (disabled by default to avoid conflicts)
+        if (!enableKeyboardInput)
+            return;
+            
         // Check for keyboard input
         bool isKeyPressed = Input.GetKey(toggleKey);
         
         // Only toggle when the key is first pressed (not held)
         if (isKeyPressed && !wasKeyPressed)
         {
+            if (debugToggle)
+                Debug.Log($"CodexToggleButton: {toggleKey} key pressed, toggling codex");
             ToggleCodex();
         }
         
@@ -56,13 +67,20 @@ public class CodexToggleButton : MonoBehaviour, IPointerClickHandler
         // Check if game is over - don't allow codex access when victory screen is active
         if (IsGameOver())
         {
-            Debug.Log("CodexToggleButton: Cannot open codex - game is over (victory screen active)");
+            if (debugToggle)
+                Debug.Log("CodexToggleButton: Cannot open codex - game is over (victory screen active)");
             return;
         }
         
         if (codexManager != null)
         {
+            if (debugToggle)
+                Debug.Log("CodexToggleButton: Calling TogglePanel on CodexPanelManager");
             codexManager.TogglePanel();
+        }
+        else
+        {
+            Debug.LogError("CodexToggleButton: CodexPanelManager is null!");
         }
     }
     

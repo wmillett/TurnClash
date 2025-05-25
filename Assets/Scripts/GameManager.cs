@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TurnClash.Units;
-using TurnClash.UI;
 using System.Collections;
 
 public class GameManager : MonoBehaviour
@@ -321,19 +320,6 @@ public class GameManager : MonoBehaviour
     {
         // Mark that scene is unloading to prevent singleton creation during cleanup
         UnitSelectionManager.MarkSceneUnloading();
-        
-        // Clean up hover tooltip system more thoroughly
-        UnitHoverTooltip.Cleanup();
-        
-        // Also destroy any existing UnitHoverTooltip instances manually
-        UnitHoverTooltip[] tooltipInstances = FindObjectsOfType<UnitHoverTooltip>();
-        foreach (var tooltip in tooltipInstances)
-        {
-            if (tooltip != null)
-            {
-                Destroy(tooltip.gameObject);
-            }
-        }
         
         // Unsubscribe from events before scene reload to prevent issues
         if (turnManager != null)
