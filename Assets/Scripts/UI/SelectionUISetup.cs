@@ -144,7 +144,7 @@ namespace TurnClash.UI
             // Create Health Text (shows current/max values)
             CreateTextElement(panelGO, "HealthText", "Health: --/--", new Vector2(10, -80), new Vector2(280, 20), 12, FontStyles.Normal);
             
-            // Create Attack and Defense stats
+            // Create Attack and defence stats
             CreateTextElement(panelGO, "AttackText", "ATK: --", new Vector2(10, -105), new Vector2(140, 25), 14, FontStyles.Normal);
             CreateTextElement(panelGO, "DefenseText", "DEF: --", new Vector2(150, -105), new Vector2(140, 25), 14, FontStyles.Normal);
         }

@@ -30,7 +30,7 @@ public class UnitSpawner : MonoBehaviour
         public string unitName;
         public int maxHealth = 100;
         public int attack = 15;
-        public int defense = 5;
+        public int defence = 5;
     }
     
     private IsometricGroundManager groundManager;
@@ -46,7 +46,7 @@ public class UnitSpawner : MonoBehaviour
                 unitName = "Chill Cube",
                 maxHealth = 80,
                 attack = 12,
-                defense = 8
+                defence = 8
             };
             Debug.Log("UnitSpawner: Created default Chill Cube template");
         }
@@ -58,14 +58,14 @@ public class UnitSpawner : MonoBehaviour
                 unitName = "Mean Ball",
                 maxHealth = 120,
                 attack = 18,
-                defense = 3
+                defence = 3
             };
             Debug.Log("UnitSpawner: Created default Mean Ball template");
         }
         
         // Validate templates have different stats
-        Debug.Log($"UnitSpawner: Chill Cube template - Name:'{chillCubeTemplate.unitName}', HP:{chillCubeTemplate.maxHealth}, ATK:{chillCubeTemplate.attack}, DEF:{chillCubeTemplate.defense}");
-        Debug.Log($"UnitSpawner: Mean Ball template - Name:'{meanBallTemplate.unitName}', HP:{meanBallTemplate.maxHealth}, ATK:{meanBallTemplate.attack}, DEF:{meanBallTemplate.defense}");
+        Debug.Log($"UnitSpawner: Chill Cube template - Name:'{chillCubeTemplate.unitName}', HP:{chillCubeTemplate.maxHealth}, ATK:{chillCubeTemplate.attack}, DEF:{chillCubeTemplate.defence}");
+        Debug.Log($"UnitSpawner: Mean Ball template - Name:'{meanBallTemplate.unitName}', HP:{meanBallTemplate.maxHealth}, ATK:{meanBallTemplate.attack}, DEF:{meanBallTemplate.defence}");
     }
     
     private void Start()
@@ -163,12 +163,12 @@ public class UnitSpawner : MonoBehaviour
             unit.maxHealth = template.maxHealth;
             unit.health = template.maxHealth; // Start with full health
             unit.attack = template.attack;
-            unit.defense = template.defense;
+            unit.defence = template.defence;
             
             // Set the unit name using the unitTypeName parameter
             unit.UnitName = unitTypeName;
             
-            Debug.Log($"✅ Stats set on Unit component for {unitObj.name}: HP={unit.health}/{unit.maxHealth}, ATK={unit.attack}, DEF={unit.defense}");
+            Debug.Log($"✅ Stats set on Unit component for {unitObj.name}: HP={unit.health}/{unit.maxHealth}, ATK={unit.attack}, DEF={unit.defence}");
             Debug.Log($"✅ Unit name set to: '{unit.UnitName}'");
         }
         else
@@ -212,7 +212,7 @@ public class UnitSpawner : MonoBehaviour
         // Mark position as occupied
         occupiedPositions.Add(gridPosition.Value);
         
-        Debug.Log($"Spawned {unitTypeName} ({unitObj.name}) for {player} at grid position {gridPosition.Value} with stats: HP={template.maxHealth}, ATK={template.attack}, DEF={template.defense}");
+        Debug.Log($"Spawned {unitTypeName} ({unitObj.name}) for {player} at grid position {gridPosition.Value} with stats: HP={template.maxHealth}, ATK={template.attack}, DEF={template.defence}");
     }
     
     private void ApplyPlayerColor(GameObject unitObj, Color playerColor, Unit.Player player, string unitTypeName)
