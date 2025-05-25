@@ -326,7 +326,7 @@ namespace TurnClash.Units
             if (isApplicationQuitting || isSceneUnloading) return;
             
             // Cast a ray from camera to see what we hit
-            Camera cam = Camera.main;
+            UnityEngine.Camera cam = UnityEngine.Camera.main;
             if (cam == null) return;
             
             Ray ray = cam.ScreenPointToRay(Input.mousePosition);

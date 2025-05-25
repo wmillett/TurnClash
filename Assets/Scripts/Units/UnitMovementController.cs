@@ -73,10 +73,19 @@ namespace TurnClash.Units
         
         private void Update()
         {
-            if (!enableArrowKeyMovement || isApplicationQuitting)
+            if (isApplicationQuitting)
                 return;
                 
-            HandleArrowKeyInput();
+            if (enableArrowKeyMovement)
+            {
+                HandleArrowKeyInput();
+            }
+            
+            // Handle defend action (G key)
+            if (Input.GetKeyDown(KeyCode.G))
+            {
+                HandleDefendInput();
+            }
         }
         
         private void OnApplicationQuit()
@@ -154,6 +163,89 @@ namespace TurnClash.Units
                 MoveSelectedUnit(direction);
                 lastInputTime = Time.time;
             }
+        }
+        
+        private void HandleDefendInput()
+        {
+            // Check if game is over - don't allow defending when victory screen is active
+            if (IsGameOver())
+            {
+                if (debugMovement)
+                    Debug.Log("UnitMovementController: Cannot defend - game is over (victory screen active)");
+                return;
+            }
+            
+            // Get the currently selected unit
+            UnitSelectionManager selectionManager = UnitSelectionManager.Instance;
+            
+            if (selectionManager == null || !selectionManager.HasSelection)
+            {
+                if (debugMovement)
+                    Debug.Log("UnitMovementController: No unit selected for defend action");
+                return;
+            }
+            
+            UnitSelectable selectedUnitSelectable = selectionManager.FirstSelectedUnit;
+            if (selectedUnitSelectable == null)
+            {
+                if (debugMovement)
+                    Debug.Log("UnitMovementController: Selected unit is null for defend action");
+                return;
+            }
+            
+            // Get the Unit component
+            Unit selectedUnit = selectedUnitSelectable.GetComponent<Unit>();
+            if (selectedUnit == null)
+            {
+                if (debugMovement)
+                    Debug.LogError("UnitMovementController: Selected object doesn't have a Unit component for defend action");
+                return;
+            }
+            
+            // Check turn system restrictions
+            if (respectTurnSystem)
+            {
+                TurnManager turnManager = TurnManager.Instance;
+                if (turnManager != null && !turnManager.CanUnitMove(selectedUnit))
+                {
+                    if (debugMovement)
+                    {
+                        if (turnManager.CurrentPlayer != selectedUnit.player)
+                        {
+                            Debug.Log($"UnitMovementController: Cannot defend - it's {turnManager.CurrentPlayer}'s turn, not {selectedUnit.player}'s");
+                        }
+                        else
+                        {
+                            Debug.Log($"UnitMovementController: Cannot defend - no moves remaining this turn ({turnManager.CurrentMoveCount}/{turnManager.MaxMovesPerTurn})");
+                        }
+                    }
+                    return;
+                }
+            }
+            
+            // Check if unit is already defending
+            if (selectedUnit.IsDefending)
+            {
+                if (debugMovement)
+                    Debug.Log($"UnitMovementController: {selectedUnit.UnitName} is already defending");
+                return;
+            }
+            
+            // Start defending
+            selectedUnit.StartDefending();
+            
+            // Use a move in the turn system
+            if (respectTurnSystem)
+            {
+                TurnManager turnManager = TurnManager.Instance;
+                if (turnManager != null)
+                {
+                    turnManager.UseMove(selectedUnit.player);
+                }
+            }
+            
+            if (debugMovement)
+                Debug.Log($"UnitMovementController: {selectedUnit.UnitName} is now defending!");
         }
         
         private void MoveSelectedUnit(Vector2Int direction)

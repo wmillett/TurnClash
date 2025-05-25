@@ -180,6 +180,9 @@ public class TurnManager : MonoBehaviour
         if (debugTurns)
             Debug.Log($"TurnManager: Turn ended. {previousPlayer} -> {currentPlayer}. Now Turn {currentTurnNumber}");
         
+        // Reset defending status for the current player's units
+        ResetDefendingStatusForPlayer(currentPlayer);
+        
         // Fire new turn start event
         OnTurnStart?.Invoke(currentPlayer);
         OnMoveCountChanged?.Invoke(currentPlayer, currentMoveCount, maxMovesPerTurn);
@@ -280,5 +283,32 @@ public class TurnManager : MonoBehaviour
         }
         
         return false; // If no combat manager found, assume game is still active
+    }
+    
+    /// <summary>
+    /// Reset defending status for all units of the specified player
+    /// </summary>
+    private void ResetDefendingStatusForPlayer(Unit.Player player)
+    {
+        if (isApplicationQuitting) return;
+        
+        // Find all units of the specified player and reset their defending status
+        Unit[] allUnits = FindObjectsOfType<Unit>();
+        int unitsReset = 0;
+        
+        foreach (Unit unit in allUnits)
+        {
+            if (unit.player == player && unit.IsDefending)
+            {
+                unit.StopDefending();
+                unitsReset++;
+                
+                if (debugTurns)
+                    Debug.Log($"TurnManager: Reset defending status for {unit.UnitName}");
+            }
+        }
+        
+        if (debugTurns && unitsReset > 0)
+            Debug.Log($"TurnManager: Reset defending status for {unitsReset} {player} units");
     }
 } 

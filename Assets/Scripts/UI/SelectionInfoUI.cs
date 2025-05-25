@@ -15,6 +15,7 @@ namespace TurnClash.UI
         [SerializeField] private Slider healthBar;
         [SerializeField] private TextMeshProUGUI attackText;
         [SerializeField] private TextMeshProUGUI defenseText;
+        [SerializeField] private TextMeshProUGUI statusText; // For showing defending status
         
         [Header("Health Bar Settings")]
         [SerializeField] private Color healthColorHigh = Color.green;
@@ -216,6 +217,16 @@ namespace TurnClash.UI
                         Debug.Log($"SelectionInfoUI: Auto-found HealthBar: {found.name}");
                     }
                 }
+                
+                if (statusText == null)
+                {
+                    var found = selectionPanel.transform.Find("StatusText")?.GetComponent<TextMeshProUGUI>();
+                    if (found != null)
+                    {
+                        statusText = found;
+                        Debug.Log($"SelectionInfoUI: Auto-found StatusText: {found.name}");
+                    }
+                }
             }
         }
         
@@ -338,6 +349,22 @@ namespace TurnClash.UI
             {
                 Debug.LogError("SelectionInfoUI: defenseText is NULL! Cannot update defence stat.");
             }
+            
+            // Update status text (defending, etc.)
+            if (statusText != null)
+            {
+                if (unit.IsDefending)
+                {
+                    statusText.text = "DEFENDING";
+                    statusText.color = Color.yellow; // Make defending status visible
+                }
+                else
+                {
+                    statusText.text = ""; // Clear status if not defending
+                }
+                
+                if (debugMode) Debug.Log($"SelectionInfoUI: Set status to '{statusText.text}' ✓");
+            }
         }
         
         private void UpdateHealthDisplay(Unit unit)
@@ -447,6 +474,11 @@ namespace TurnClash.UI
             if (defenseText != null)
             {
                 defenseText.text = "DEF: --";
+            }
+            
+            if (statusText != null)
+            {
+                statusText.text = "";
             }
         }
         

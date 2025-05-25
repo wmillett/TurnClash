@@ -24,6 +24,10 @@ namespace TurnClash.Units
         [Header("Combat Settings")]
         [SerializeField] private bool debugCombat = true;
         
+        [Header("Defending")]
+        [SerializeField] private bool isDefending = false; // Whether this unit is currently defending
+        [SerializeField] private bool debugDefending = false; // Debug defending actions
+        
         [Header("Grid Movement")]
         private Vector2Int currentGridPosition;
         private IsometricGroundManager groundManager;
@@ -47,6 +51,7 @@ namespace TurnClash.Units
         public System.Action<Unit, Unit, int> OnAttackPerformed; // attacker, defender, damage
         public System.Action<Unit> OnUnitDestroyed;
         public System.Action<Unit, Vector2Int> OnUnitAdvancedToPosition; // New event for advance movement
+        public System.Action<Unit> OnUnitStartedDefending; // New event for defending
         
         // Public property to access unit name
         public string UnitName 
@@ -163,6 +168,14 @@ namespace TurnClash.Units
                 return;
             }
             
+            // Check if target is defending - cannot attack defending units
+            if (target.isDefending)
+            {
+                if (debugCombat || debugDefending)
+                    Debug.LogWarning($"{unitName} cannot attack {target.unitName} - target is defending!");
+                return;
+            }
+            
             // Store the target's position before the attack
             Vector2Int victimPosition = target.GetGridPosition();
             bool wasTargetAlive = target.IsAlive();
@@ -249,7 +262,7 @@ namespace TurnClash.Units
         {
             Unit unitAtPosition = GetUnitAtPosition(targetPosition);
             
-            if (unitAtPosition != null && unitAtPosition.player != this.player)
+            if (unitAtPosition != null && unitAtPosition.player != this.player && !unitAtPosition.IsDefending)
             {
                 return unitAtPosition;
             }
@@ -368,6 +381,14 @@ namespace TurnClash.Units
         public bool CanMoveTo(Vector2Int targetPosition)
         {
             Debug.Log($"=== {unitName} CanMoveTo checking {targetPosition} ===");
+            
+            // Check if unit is defending - defending units cannot move
+            if (isDefending)
+            {
+                if (debugDefending)
+                    Debug.Log($"{unitName}: CanMoveTo failed - unit is defending");
+                return false;
+            }
             
             if (groundManager == null || unitSpawner == null)
             {
@@ -543,6 +564,54 @@ namespace TurnClash.Units
                 if (debugCombat)
                     Debug.Log($"{unitName} instantly advanced to {targetPosition} (animation disabled)");
             }
+        }
+        
+        /// <summary>
+        /// Defending functionality
+        /// </summary>
+        public bool IsDefending => isDefending;
+        
+        /// <summary>
+        /// Set the unit to defending mode
+        /// </summary>
+        public void StartDefending()
+        {
+            if (isDefending)
+            {
+                if (debugDefending)
+                    Debug.LogWarning($"{unitName} is already defending");
+                return;
+            }
+            
+            isDefending = true;
+            
+            if (debugDefending)
+                Debug.Log($"{unitName} starts defending - cannot move, attack, or be attacked until next turn");
+            
+            // Fire defending event
+            OnUnitStartedDefending?.Invoke(this);
+        }
+        
+        /// <summary>
+        /// Stop defending (called when player's turn starts)
+        /// </summary>
+        public void StopDefending()
+        {
+            if (!isDefending)
+                return;
+                
+            isDefending = false;
+            
+            if (debugDefending)
+                Debug.Log($"{unitName} stops defending - can now move and attack");
+        }
+        
+        /// <summary>
+        /// Check if unit can perform actions (not defending)
+        /// </summary>
+        public bool CanPerformActions()
+        {
+            return !isDefending;
         }
     }
 } 
