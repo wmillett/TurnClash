@@ -493,6 +493,9 @@ namespace TurnClash.Units
             if (target == null)
                 return "No target";
                 
+            if (target.IsDefending)
+                return $"{target.unitName} is defending - cannot attack";
+                
             int damage = Mathf.Max(1, this.attack - target.defence);
             return $"{unitName} -> {target.unitName}: {damage} damage";
         }
@@ -588,6 +591,13 @@ namespace TurnClash.Units
             if (debugDefending)
                 Debug.Log($"{unitName} starts defending - cannot move, attack, or be attacked until next turn");
             
+            // Apply visual effect
+            UnitSelectable selectable = GetComponent<UnitSelectable>();
+            if (selectable != null)
+            {
+                selectable.ShowDefendingEffect();
+            }
+            
             // Fire defending event
             OnUnitStartedDefending?.Invoke(this);
         }
@@ -601,6 +611,13 @@ namespace TurnClash.Units
                 return;
                 
             isDefending = false;
+            
+            // Remove visual effect
+            UnitSelectable selectable = GetComponent<UnitSelectable>();
+            if (selectable != null)
+            {
+                selectable.RemoveDefendingEffect();
+            }
             
             if (debugDefending)
                 Debug.Log($"{unitName} stops defending - can now move and attack");

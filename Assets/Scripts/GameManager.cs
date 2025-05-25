@@ -121,7 +121,7 @@ public class GameManager : MonoBehaviour
         Debug.Log("Combat system is active - move into enemy units to attack!");
         
         // Show controls including reset
-        string controls = "Controls: Arrow keys to move/attack, X key to end turn early";
+        string controls = "Controls: Arrow keys to move/attack, G key to defend, X key to end turn early";
         if (allowReset && showResetInstructions)
         {
             controls += $", {resetKey} key to reset game";

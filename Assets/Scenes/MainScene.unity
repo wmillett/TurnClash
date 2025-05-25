@@ -3360,6 +3360,7 @@ MonoBehaviour:
   healthBar: {fileID: 921698480}
   attackText: {fileID: 2139411393}
   defenseText: {fileID: 1630795130}
+  statusText: {fileID: 0}
   healthColorHigh: {r: 0, g: 1, b: 0, a: 1}
   healthColorMid: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   healthColorLow: {r: 1, g: 0, b: 0, a: 1}
@@ -4094,7 +4095,7 @@ MonoBehaviour:
   m_HandleRect: {fileID: 164035655}
   m_Direction: 2
   m_Value: 0
-  m_Size: 0.99999857
+  m_Size: 0.99705905
   m_NumberOfSteps: 0
   m_OnValueChanged:
     m_PersistentCalls:
@@ -4321,7 +4322,7 @@ MonoBehaviour:
   victoryText: {fileID: 648234663}
   exitButton: {fileID: 728613380}
   resetButton: {fileID: 407792305}
-  victoryTextFormat: Player {0} has won!
+  victoryTextFormat: '{0} has won!'
   player1VictoryColor: {r: 0.2, g: 0.4, b: 1, a: 1}
   player2VictoryColor: {r: 1, g: 0.3, b: 0.3, a: 1}
   useRichText: 1
@@ -4471,7 +4472,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -0.000008486133}
+  m_AnchoredPosition: {x: 0, y: 0.00034586655}
   m_SizeDelta: {x: 0, y: 300}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!1 &1297308620

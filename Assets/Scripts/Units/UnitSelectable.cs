@@ -10,11 +10,14 @@ namespace TurnClash.Units
         [Header("Highlight Settings")]
         [SerializeField] private Color glowColor = new Color(1f, 0.8f, 0f, 1f); // Golden glow for selection
         [SerializeField] private Color attackableColor = new Color(1f, 0.2f, 0.2f, 1f); // Red glow for attackable enemies
+        [SerializeField] private Color defendingTint = new Color(0.6f, 0.6f, 0.9f, 1f); // More visible blue-grey tint for defending
         [SerializeField] private float glowIntensity = 2f;
         [SerializeField] private bool useEmission = true;
+        [SerializeField] private bool debugVisualEffects = false; // Debug visual effect changes
         
         // Visual feedback state
         private bool isAttackableHighlighted = false;
+        private bool isDefendingHighlighted = false;
         
         private Unit unit;
         private List<Renderer> renderers;
@@ -114,7 +117,8 @@ namespace TurnClash.Units
             
             if (useEmission)
             {
-                DisableGlow();
+                // Restore the proper visual state (might need defending tint)
+                RestoreProperVisualState();
             }
             
             OnDeselected?.Invoke(this);
@@ -194,15 +198,8 @@ namespace TurnClash.Units
             
             if (useEmission)
             {
-                // If unit is selected, restore selection glow, otherwise restore original
-                if (isSelected)
-                {
-                    EnableGlow();
-                }
-                else
-                {
-                    DisableGlow();
-                }
+                // Restore the proper visual state
+                RestoreProperVisualState();
             }
         }
         
@@ -223,6 +220,177 @@ namespace TurnClash.Units
                     material.SetColor("_EmissiveColor", emissionColor);
                 }
             }
+        }
+        
+        /// <summary>
+        /// Show defending visual effect (greyish tint)
+        /// </summary>
+        public void ShowDefendingEffect()
+        {
+            if (isDefendingHighlighted) return;
+            
+            if (debugVisualEffects)
+                Debug.Log($"UnitSelectable {name}: Showing defending effect");
+            
+            isDefendingHighlighted = true;
+            
+            // Restore proper visual state which will include the defending tint
+            RestoreProperVisualState();
+        }
+        
+        /// <summary>
+        /// Remove defending visual effect
+        /// </summary>
+        public void RemoveDefendingEffect()
+        {
+            if (!isDefendingHighlighted) return;
+            
+            isDefendingHighlighted = false;
+            
+            if (debugVisualEffects)
+                Debug.Log($"UnitSelectable {name}: Removing defending effect");
+            
+            // Restore the proper visual state based on current conditions
+            RestoreProperVisualState();
+        }
+        
+        private void EnableDefendingTint()
+        {
+            // Get the current team color and apply defending tint to it
+            Color teamColor = GetCurrentTeamColor();
+            Color tintedColor = Color.Lerp(teamColor, defendingTint, 0.75f);
+            
+            foreach (var material in materials)
+            {
+                if (material != null)
+                {
+                    // Apply tinted color to both standard and URP properties
+                    if (material.HasProperty("_Color"))
+                    {
+                        material.SetColor("_Color", tintedColor);
+                    }
+                    if (material.HasProperty("_BaseColor"))
+                    {
+                        material.SetColor("_BaseColor", tintedColor);
+                    }
+                }
+            }
+        }
+        
+        private void DisableDefendingTint()
+        {
+            // Get the current team color instead of using stored original colors
+            Color teamColor = GetCurrentTeamColor();
+            
+            foreach (var material in materials)
+            {
+                if (material != null)
+                {
+                    // Apply the current team color
+                    if (material.HasProperty("_Color"))
+                    {
+                        material.SetColor("_Color", teamColor);
+                    }
+                    if (material.HasProperty("_BaseColor"))
+                    {
+                        material.SetColor("_BaseColor", teamColor);
+                    }
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Get the current team color for this unit
+        /// </summary>
+        private Color GetCurrentTeamColor()
+        {
+            if (unit == null) return Color.white;
+            
+            // Find the UnitSpawner to get the current team color
+            UnitSpawner spawner = FindObjectOfType<UnitSpawner>();
+            if (spawner != null)
+            {
+                return spawner.GetPlayerColor(unit.player);
+            }
+            
+            // Fallback colors if UnitSpawner not found
+            switch (unit.player)
+            {
+                case Unit.Player.Player1:
+                    return Color.blue;
+                case Unit.Player.Player2:
+                    return Color.red;
+                default:
+                    return Color.white;
+            }
+        }
+        
+        /// <summary>
+        /// Restore the proper visual state based on current highlighting conditions
+        /// </summary>
+        private void RestoreProperVisualState()
+        {
+            if (debugVisualEffects)
+                Debug.Log($"UnitSelectable {name}: Restoring visual state - Selected: {isSelected}, Attackable: {isAttackableHighlighted}, Defending: {isDefendingHighlighted}");
+            
+            // First, reset all visual effects to team color
+            Color teamColor = GetCurrentTeamColor();
+            
+            // Reset base colors to team color
+            foreach (var material in materials)
+            {
+                if (material != null)
+                {
+                    if (material.HasProperty("_Color"))
+                    {
+                        material.SetColor("_Color", teamColor);
+                    }
+                    if (material.HasProperty("_BaseColor"))
+                    {
+                        material.SetColor("_BaseColor", teamColor);
+                    }
+                }
+            }
+            
+            // Restore emission to original
+            foreach (var material in materials)
+            {
+                if (material != null && originalEmissionColors.ContainsKey(material))
+                {
+                    material.SetColor("_EmissionColor", originalEmissionColors[material]);
+                    material.SetColor("_EmissiveColor", originalEmissionColors[material]);
+                    
+                    if (originalEmissionColors[material] == Color.black)
+                    {
+                        material.DisableKeyword("_EMISSION");
+                    }
+                }
+            }
+            
+            // Apply defending tint first if unit is defending
+            if (isDefendingHighlighted)
+            {
+                if (debugVisualEffects)
+                    Debug.Log($"UnitSelectable {name}: Applying defending tint");
+                EnableDefendingTint();
+            }
+            
+            // Then apply emission effects on top
+            if (isAttackableHighlighted)
+            {
+                if (debugVisualEffects)
+                    Debug.Log($"UnitSelectable {name}: Applying attackable glow");
+                EnableAttackableGlow();
+            }
+            else if (isSelected)
+            {
+                if (debugVisualEffects)
+                    Debug.Log($"UnitSelectable {name}: Applying selection glow");
+                EnableGlow();
+            }
+            
+            if (debugVisualEffects)
+                Debug.Log($"UnitSelectable {name}: Visual state restoration complete");
         }
         
         private void OnDestroy()
