@@ -11,7 +11,7 @@ namespace TurnClash.Units
         [Header("Selection Settings")]
         [SerializeField] private bool allowMultipleSelection = false; // For turn-based, usually single selection
         [SerializeField] private KeyCode multiSelectKey = KeyCode.LeftControl; // Hold to multi-select
-        [SerializeField] private bool debugSelection = true;
+        [SerializeField] private bool debugSelection = false; // TEMPORARILY DISABLED for victory panel debugging
         
         // Singleton instance
         private static UnitSelectionManager instance;

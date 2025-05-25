@@ -25,7 +25,7 @@ namespace TurnClash.UI
         
         [Header("Settings")]
         [SerializeField] private bool hideWhenNoSelection = true;
-        [SerializeField] private bool debugMode = false; // Changed to false to reduce console spam
+        [SerializeField] private bool debugMode = false; // TEMPORARILY DISABLED for victory panel debugging
         
         private UnitSelectable currentSelectedUnit;
         

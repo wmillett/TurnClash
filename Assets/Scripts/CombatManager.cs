@@ -8,7 +8,7 @@ public class CombatManager : MonoBehaviour
 {
     [Header("Combat Settings")]
     [SerializeField] private bool enableCombatLogging = true;
-    [SerializeField] private bool enableDetailedCombatLog = true;
+    [SerializeField] private bool enableDetailedCombatLog = false;
     [SerializeField] private bool enableCombatStatistics = true;
     
     [Header("Combat Statistics")]
@@ -100,9 +100,17 @@ public class CombatManager : MonoBehaviour
         
         // Find all existing units and subscribe to their events
         Unit[] allUnits = FindObjectsOfType<Unit>();
+        Debug.Log($"🔗 COMBAT MANAGER: SubscribeToExistingUnits found {allUnits.Length} units to subscribe to");
+        
         foreach (Unit unit in allUnits)
         {
             SubscribeToUnit(unit);
+            Debug.Log($"🔗 COMBAT MANAGER: Subscribed to {unit.UnitName} ({unit.player})");
+        }
+        
+        if (allUnits.Length == 0)
+        {
+            Debug.LogWarning("⚠️ COMBAT MANAGER: No units found during SubscribeToExistingUnits! Units might not be spawned yet.");
         }
     }
     
@@ -116,6 +124,17 @@ public class CombatManager : MonoBehaviour
         unit.OnAttackPerformed += OnUnitAttackPerformed;
         unit.OnUnitDestroyed += OnUnitDestroyed;
         unit.OnUnitAdvancedToPosition += OnUnitAdvancedToPosition;
+    }
+    
+    /// <summary>
+    /// Re-scan for units and subscribe to any we missed (called when units are spawned later)
+    /// </summary>
+    public void RefreshUnitSubscriptions()
+    {
+        if (isApplicationQuitting) return;
+        
+        Debug.Log("🔄 COMBAT MANAGER: Refreshing unit subscriptions...");
+        SubscribeToExistingUnits();
     }
     
     /// <summary>
@@ -232,6 +251,8 @@ public class CombatManager : MonoBehaviour
     {
         if (isApplicationQuitting) return;
         
+        Debug.Log($"🔍🔍🔍 COMBAT MANAGER: Checking elimination for {player} 🔍🔍🔍");
+        
         // Count remaining units for this player
         Unit[] allUnits = FindObjectsOfType<Unit>();
         int remainingUnits = 0;
@@ -244,12 +265,11 @@ public class CombatManager : MonoBehaviour
             }
         }
         
+        Debug.Log($"📊 COMBAT MANAGER: {player} has {remainingUnits} units remaining");
+        
         if (remainingUnits == 0)
         {
-            if (enableCombatLogging)
-            {
-                Debug.Log($"🚨 {player} has been eliminated! No remaining units.");
-            }
+            Debug.Log($"💀💀💀 COMBAT MANAGER: {player} has been eliminated! Firing OnPlayerEliminationCheck event 💀💀💀");
             
             OnPlayerEliminationCheck?.Invoke(player);
         }

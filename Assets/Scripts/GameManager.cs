@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TurnClash.Units;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -118,6 +119,9 @@ public class GameManager : MonoBehaviour
         }
         Debug.Log(controls);
         
+        // Start coroutine to refresh combat manager subscriptions after units spawn
+        StartCoroutine(RefreshCombatManagerAfterUnitsSpawn());
+        
         // Subscribe to turn events for additional logging
         if (turnManager != null)
         {
@@ -132,6 +136,28 @@ public class GameManager : MonoBehaviour
         {
             combatManager.OnPlayerEliminationCheck += OnPlayerEliminationCheck;
             combatManager.OnUnitKilled += OnUnitKilled;
+        }
+    }
+    
+    /// <summary>
+    /// Coroutine to refresh CombatManager unit subscriptions after units are spawned
+    /// </summary>
+    private System.Collections.IEnumerator RefreshCombatManagerAfterUnitsSpawn()
+    {
+        // Wait a few frames for units to be spawned
+        yield return null; // Wait 1 frame
+        yield return null; // Wait 2 frames
+        yield return null; // Wait 3 frames
+        
+        Debug.Log("🔄 GameManager: Refreshing CombatManager subscriptions after unit spawn delay...");
+        
+        if (combatManager != null)
+        {
+            combatManager.RefreshUnitSubscriptions();
+        }
+        else
+        {
+            Debug.LogError("❌ GameManager: CombatManager is null during refresh attempt!");
         }
     }
     

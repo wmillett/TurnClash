@@ -9,7 +9,7 @@ public class TurnManager : MonoBehaviour
     [Header("Turn Settings")]
     [SerializeField] private int maxMovesPerTurn = 4;
     [SerializeField] private Unit.Player startingPlayer = Unit.Player.Player1;
-    [SerializeField] private bool debugTurns = true;
+    [SerializeField] private bool debugTurns = false; // TEMPORARILY DISABLED for victory panel debugging
     
     // Current turn state
     private Unit.Player currentPlayer;

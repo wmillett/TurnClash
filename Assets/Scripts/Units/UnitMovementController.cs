@@ -11,7 +11,7 @@ namespace TurnClash.Units
         [Header("Movement Settings")]
         [SerializeField] private bool enableArrowKeyMovement = true;
         [SerializeField] private float inputCooldown = 0.2f; // Prevent rapid movement
-        [SerializeField] private bool debugMovement = true;
+        [SerializeField] private bool debugMovement = false; // TEMPORARILY DISABLED for victory panel debugging
         [SerializeField] private bool respectTurnSystem = true; // Whether to check turn system before allowing movement
         
         [Header("Combat Settings")]
