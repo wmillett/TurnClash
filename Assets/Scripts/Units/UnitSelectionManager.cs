@@ -154,6 +154,14 @@ namespace TurnClash.Units
         {
             if (unit == null || isApplicationQuitting || isSceneUnloading) return;
             
+            // Check if game is over - don't allow new selections when victory screen is active
+            if (IsGameOver())
+            {
+                if (debugSelection)
+                    Debug.Log("UnitSelectionManager: Cannot select units - game is over (victory screen active)");
+                return;
+            }
+            
             bool isMultiSelect = allowMultipleSelection && Input.GetKey(multiSelectKey);
             
             // If not multi-selecting, clear current selection first
@@ -190,6 +198,23 @@ namespace TurnClash.Units
             
             if (debugSelection)
                 Debug.Log($"Selected unit: {unit.name}. Total selected: {selectedUnits.Count}");
+        }
+        
+        /// <summary>
+        /// Check if the game is over by seeing if any player has been eliminated
+        /// </summary>
+        private bool IsGameOver()
+        {
+            // Try to find the CombatManager to check player elimination
+            var combatManager = FindObjectOfType<CombatManager>();
+            if (combatManager != null)
+            {
+                // Check if either player has been eliminated
+                return combatManager.IsPlayerEliminated(Unit.Player.Player1) || 
+                       combatManager.IsPlayerEliminated(Unit.Player.Player2);
+            }
+            
+            return false; // If no combat manager found, assume game is still active
         }
         
         public void DeselectUnit(UnitSelectable unit)

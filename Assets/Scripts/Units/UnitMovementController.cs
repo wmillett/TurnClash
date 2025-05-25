@@ -86,6 +86,14 @@ namespace TurnClash.Units
         
         private void HandleArrowKeyInput()
         {
+            // Check if game is over - don't allow arrow key movement when victory screen is active
+            if (IsGameOver())
+            {
+                if (debugMovement)
+                    Debug.Log("UnitMovementController: Cannot process arrow keys - game is over (victory screen active)");
+                return;
+            }
+            
             // Check each arrow key
             Vector2Int direction = Vector2Int.zero;
             bool inputDetected = false;
@@ -392,6 +400,23 @@ namespace TurnClash.Units
                 direction.x = 1;
                 
             return direction;
+        }
+        
+        /// <summary>
+        /// Check if the game is over by seeing if any player has been eliminated
+        /// </summary>
+        private bool IsGameOver()
+        {
+            // Try to find the CombatManager to check player elimination
+            var combatManager = FindObjectOfType<CombatManager>();
+            if (combatManager != null)
+            {
+                // Check if either player has been eliminated
+                return combatManager.IsPlayerEliminated(Unit.Player.Player1) || 
+                       combatManager.IsPlayerEliminated(Unit.Player.Player2);
+            }
+            
+            return false; // If no combat manager found, assume game is still active
         }
         
         private void OnDestroy()

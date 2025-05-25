@@ -83,9 +83,16 @@ public class TurnManager : MonoBehaviour
         if (isApplicationQuitting || !gameStarted)
             return;
             
-        // Check for early turn end input (X key)
+        // Check for early turn end input (X key) - but only if game is still active
         if (Input.GetKeyDown(KeyCode.X))
         {
+            // Check if game is over by seeing if any player has been eliminated
+            if (IsGameOver())
+            {
+                // Don't allow turn skipping when game is over
+                return;
+            }
+            
             EndTurnEarly();
         }
     }
@@ -256,5 +263,22 @@ public class TurnManager : MonoBehaviour
         // Don't set it during scene changes or manual destroy
         if (debugTurns)
             Debug.Log("TurnManager: Cleanup complete, instance cleared");
+    }
+    
+    /// <summary>
+    /// Check if the game is over by seeing if any player has been eliminated
+    /// </summary>
+    private bool IsGameOver()
+    {
+        // Try to find the CombatManager to check player elimination
+        CombatManager combatManager = CombatManager.Instance;
+        if (combatManager != null)
+        {
+            // Check if either player has been eliminated
+            return combatManager.IsPlayerEliminated(Unit.Player.Player1) || 
+                   combatManager.IsPlayerEliminated(Unit.Player.Player2);
+        }
+        
+        return false; // If no combat manager found, assume game is still active
     }
 } 

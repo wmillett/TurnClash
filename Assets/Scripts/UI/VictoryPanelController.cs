@@ -311,6 +311,9 @@ namespace TurnClash.UI
 
             isGameOver = true;
             
+            // Auto-close codex if it's open when victory screen appears
+            CloseCodexIfOpen();
+            
             Debug.Log($"✅ VICTORY PANEL: Components validated, showing panel for {winner}");
 
             // Show the victory panel
@@ -361,6 +364,73 @@ namespace TurnClash.UI
             
             if (debugMode)
                 Debug.Log($"VictoryPanelController: Panel '{victoryPanel.name}' is now active: {victoryPanel.activeInHierarchy}");
+        }
+        
+        /// <summary>
+        /// Automatically close the codex if it's currently open
+        /// </summary>
+        private void CloseCodexIfOpen()
+        {
+            try
+            {
+                // Find the codex panel manager
+                var codexPanelManager = FindObjectOfType<CodexPanelManager>();
+                if (codexPanelManager != null)
+                {
+                    // Check if the codex panel is currently visible
+                    var codexPanel = codexPanelManager.GetComponent<RectTransform>();
+                    if (codexPanel != null && codexPanel.gameObject.activeInHierarchy)
+                    {
+                        Debug.Log("🔄 VICTORY PANEL: Codex is open, auto-closing it for victory screen");
+                        
+                        // Force close the codex by calling TogglePanel (which will close it if open)
+                        // We need to use reflection since TogglePanel might be private or we need to access the isPanelVisible field
+                        var isPanelVisibleField = typeof(CodexPanelManager).GetField("isPanelVisible", 
+                            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                        
+                        if (isPanelVisibleField != null)
+                        {
+                            bool isPanelVisible = (bool)isPanelVisibleField.GetValue(codexPanelManager);
+                            if (isPanelVisible)
+                            {
+                                // Call TogglePanel to close it
+                                var togglePanelMethod = typeof(CodexPanelManager).GetMethod("TogglePanel");
+                                if (togglePanelMethod != null)
+                                {
+                                    togglePanelMethod.Invoke(codexPanelManager, null);
+                                    Debug.Log("✅ VICTORY PANEL: Successfully closed codex");
+                                }
+                                else
+                                {
+                                    Debug.LogWarning("⚠️ VICTORY PANEL: Could not find TogglePanel method");
+                                }
+                            }
+                            else
+                            {
+                                Debug.Log("ℹ️ VICTORY PANEL: Codex was already closed");
+                            }
+                        }
+                        else
+                        {
+                            // Fallback: try to disable the codex panel directly
+                            codexPanel.gameObject.SetActive(false);
+                            Debug.Log("✅ VICTORY PANEL: Codex panel disabled directly as fallback");
+                        }
+                    }
+                    else
+                    {
+                        Debug.Log("ℹ️ VICTORY PANEL: Codex panel is not active, no need to close");
+                    }
+                }
+                else
+                {
+                    Debug.Log("ℹ️ VICTORY PANEL: No CodexPanelManager found in scene");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogWarning($"⚠️ VICTORY PANEL: Error while trying to close codex: {ex.Message}");
+            }
         }
         
         private void OnExitButtonClicked()

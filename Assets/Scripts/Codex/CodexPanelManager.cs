@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TMPro;
 using DG.Tweening;
+using TurnClash.Units;
 
 public class CodexPanelManager : MonoBehaviour
 {
@@ -331,6 +332,13 @@ public class CodexPanelManager : MonoBehaviour
     
     public void TogglePanel()
     {
+        // Check if game is over - don't allow codex access when victory screen is active
+        if (IsGameOver())
+        {
+            Debug.Log("CodexPanelManager: Cannot toggle codex panel - game is over (victory screen active)");
+            return;
+        }
+        
         Debug.Log("Toggle button clicked");
         isPanelVisible = !isPanelVisible;
 
@@ -684,5 +692,23 @@ public class CodexPanelManager : MonoBehaviour
         if (entryImage == null) Debug.LogError("EntryImage not found!");
         if (menuScrollView == null) Debug.LogError("MenuScrollView not found!");
         if (entryScrollView == null) Debug.LogError("EntryScrollView not found!");
+        Debug.Log("VerifyReferences: All references verified successfully");
+    }
+    
+    /// <summary>
+    /// Check if the game is over by seeing if any player has been eliminated
+    /// </summary>
+    private bool IsGameOver()
+    {
+        // Try to find the CombatManager to check player elimination
+        var combatManager = FindObjectOfType<CombatManager>();
+        if (combatManager != null)
+        {
+            // Check if either player has been eliminated
+            return combatManager.IsPlayerEliminated(Unit.Player.Player1) || 
+                   combatManager.IsPlayerEliminated(Unit.Player.Player2);
+        }
+        
+        return false; // If no combat manager found, assume game is still active
     }
 } 

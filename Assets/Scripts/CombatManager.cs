@@ -289,8 +289,7 @@ public class CombatManager : MonoBehaviour
                $"Player 1 Attacks: {player1Attacks}\n" +
                $"Player 2 Attacks: {player2Attacks}\n" +
                $"Total Damage: {totalDamageDealt}\n" +
-               $"Units Destroyed: {unitsDestroyed}\n" +
-               $"Advance Movements: {advanceMovements}";
+               $"Units Destroyed: {unitsDestroyed}";
     }
     
     /// <summary>
