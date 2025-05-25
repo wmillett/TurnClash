@@ -9,7 +9,7 @@ public class TurnManager : MonoBehaviour
     [Header("Turn Settings")]
     [SerializeField] private int maxMovesPerTurn = 4;
     [SerializeField] private Unit.Player startingPlayer = Unit.Player.Player1;
-    [SerializeField] private bool debugTurns = false; // TEMPORARILY DISABLED for victory panel debugging
+    // Debug turns now controlled by DebugManager
     
     // Current turn state
     private Unit.Player currentPlayer;
@@ -100,8 +100,9 @@ public class TurnManager : MonoBehaviour
     private void OnApplicationQuit()
     {
         isApplicationQuitting = true;
-        if (debugTurns)
-            Debug.Log("TurnManager: Application quitting, preventing new instance creation");
+#if DEBUG_TURNS
+        Debug.Log("TurnManager: Application quitting, preventing new instance creation");
+#endif
     }
     
     public void StartGame()
@@ -113,8 +114,9 @@ public class TurnManager : MonoBehaviour
         currentTurnNumber = 1; // Reset turn counter
         gameStarted = true;
         
-        if (debugTurns)
-            Debug.Log($"TurnManager: Game started! {currentPlayer} goes first. Turn {currentTurnNumber}");
+#if DEBUG_TURNS
+        Debug.Log($"TurnManager: Game started! {currentPlayer} goes first. Turn {currentTurnNumber}");
+#endif
             
         // Fire turn start event
         OnTurnStart?.Invoke(currentPlayer);
@@ -129,16 +131,18 @@ public class TurnManager : MonoBehaviour
         // Verify it's the correct player's turn
         if (player != currentPlayer)
         {
-            if (debugTurns)
-                Debug.LogWarning($"TurnManager: {player} tried to use a move, but it's {currentPlayer}'s turn!");
+            #if DEBUG_TURNS
+        Debug.LogWarning($"TurnManager: {player} tried to use a move, but it's {currentPlayer}'s turn!");
+#endif
             return;
         }
         
         // Increment move count
         currentMoveCount++;
         
-        if (debugTurns)
-            Debug.Log($"TurnManager: {player} used move {currentMoveCount}/{maxMovesPerTurn}");
+#if DEBUG_TURNS
+        Debug.Log($"TurnManager: {player} used move {currentMoveCount}/{maxMovesPerTurn}");
+#endif
         
         // Fire move used event
         OnMoveUsed?.Invoke(currentPlayer, maxMovesPerTurn - currentMoveCount);
@@ -155,8 +159,9 @@ public class TurnManager : MonoBehaviour
     {
         if (isApplicationQuitting || !gameStarted) return;
         
-        if (debugTurns)
-            Debug.Log($"TurnManager: {currentPlayer} ended their turn early ({currentMoveCount}/{maxMovesPerTurn} moves used)");
+#if DEBUG_TURNS
+        Debug.Log($"TurnManager: {currentPlayer} ended their turn early ({currentMoveCount}/{maxMovesPerTurn} moves used)");
+#endif
             
         EndTurn();
     }
@@ -177,8 +182,9 @@ public class TurnManager : MonoBehaviour
         // Increment turn number when switching players
         currentTurnNumber++;
         
-        if (debugTurns)
-            Debug.Log($"TurnManager: Turn ended. {previousPlayer} -> {currentPlayer}. Now Turn {currentTurnNumber}");
+#if DEBUG_TURNS
+        Debug.Log($"TurnManager: Turn ended. {previousPlayer} -> {currentPlayer}. Now Turn {currentTurnNumber}");
+#endif
         
         // Reset defending status for the current player's units
         ResetDefendingStatusForPlayer(currentPlayer);
@@ -223,8 +229,9 @@ public class TurnManager : MonoBehaviour
         currentTurnNumber = 1; // Reset turn number
         gameStarted = false;
         
-        if (debugTurns)
-            Debug.Log("TurnManager: Game reset");
+#if DEBUG_TURNS
+        Debug.Log("TurnManager: Game reset");
+#endif
             
         // Restart the game
         StartGame();
@@ -233,21 +240,24 @@ public class TurnManager : MonoBehaviour
     public void SetMaxMovesPerTurn(int moves)
     {
         maxMovesPerTurn = Mathf.Max(1, moves);
-        if (debugTurns)
-            Debug.Log($"TurnManager: Max moves per turn set to {maxMovesPerTurn}");
+#if DEBUG_TURNS
+        Debug.Log($"TurnManager: Max moves per turn set to {maxMovesPerTurn}");
+#endif
     }
     
     public void SetStartingPlayer(Unit.Player player)
     {
         startingPlayer = player;
-        if (debugTurns)
-            Debug.Log($"TurnManager: Starting player set to {startingPlayer}");
+#if DEBUG_TURNS
+        Debug.Log($"TurnManager: Starting player set to {startingPlayer}");
+#endif
     }
     
     private void OnDestroy()
     {
-        if (debugTurns)
-            Debug.Log("TurnManager: OnDestroy called");
+#if DEBUG_TURNS
+        Debug.Log("TurnManager: OnDestroy called");
+#endif
             
         // Clear all event subscriptions
         OnTurnStart = null;
@@ -264,8 +274,9 @@ public class TurnManager : MonoBehaviour
         
         // Only set quitting flag if we're actually quitting the application
         // Don't set it during scene changes or manual destroy
-        if (debugTurns)
-            Debug.Log("TurnManager: Cleanup complete, instance cleared");
+#if DEBUG_TURNS
+        Debug.Log("TurnManager: Cleanup complete, instance cleared");
+#endif
     }
     
     /// <summary>
@@ -303,12 +314,15 @@ public class TurnManager : MonoBehaviour
                 unit.StopDefending();
                 unitsReset++;
                 
-                if (debugTurns)
-                    Debug.Log($"TurnManager: Reset defending status for {unit.UnitName}");
+#if DEBUG_TURNS
+                Debug.Log($"TurnManager: Reset defending status for {unit.UnitName}");
+#endif
             }
         }
         
-        if (debugTurns && unitsReset > 0)
+#if DEBUG_TURNS
+        if (unitsReset > 0)
             Debug.Log($"TurnManager: Reset defending status for {unitsReset} {player} units");
+#endif
     }
 } 

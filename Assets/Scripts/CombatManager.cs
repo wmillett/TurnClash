@@ -1,5 +1,6 @@
 using UnityEngine;
 using TurnClash.Units;
+using TurnClash.Debug;
 
 /// <summary>
 /// Manages combat events and provides combat-related functionality
@@ -7,9 +8,10 @@ using TurnClash.Units;
 public class CombatManager : MonoBehaviour
 {
     [Header("Combat Settings")]
-    [SerializeField] private bool enableCombatLogging = true;
-    [SerializeField] private bool enableDetailedCombatLog = false;
-    [SerializeField] private bool enableCombatStatistics = true;
+    // Combat logging now controlled by DebugManager
+    private bool enableCombatLogging = true;
+    private bool enableDetailedCombatLog = false;
+    private bool enableCombatStatistics = true;
     
     [Header("Combat Statistics")]
     [SerializeField] private int totalCombats = 0;
@@ -76,14 +78,36 @@ public class CombatManager : MonoBehaviour
     {
         // Ensure the flag is cleared on scene start
         isApplicationQuitting = false;
+        
+        // Initialize debug settings from DebugManager
+        InitializeDebugSettings();
+        
+#if DEBUG_COMBAT
         Debug.Log("CombatManager: Start() called, ready for operations");
+#endif
         
         // Subscribe to all existing units' combat events
         SubscribeToExistingUnits();
         
+#if DEBUG_COMBAT
         if (enableCombatLogging)
         {
             Debug.Log("CombatManager: Initialized and ready to track combat");
+        }
+#endif
+    }
+    
+    /// <summary>
+    /// Initialize debug settings from DebugManager
+    /// </summary>
+    private void InitializeDebugSettings()
+    {
+        var debugManager = DebugManager.Instance;
+        if (debugManager != null)
+        {
+            enableCombatLogging = debugManager.CombatDebugging;
+            enableDetailedCombatLog = debugManager.DetailedCombatLogging;
+            enableCombatStatistics = debugManager.CombatStatistics;
         }
     }
     
@@ -166,8 +190,10 @@ public class CombatManager : MonoBehaviour
         }
         
         // Combat logging
+#if DEBUG_COMBAT
         if (enableCombatLogging)
         {
+#if DEBUG_DETAILED_COMBAT
             if (enableDetailedCombatLog)
             {
                 Debug.Log($"=== COMBAT ===");
@@ -178,10 +204,12 @@ public class CombatManager : MonoBehaviour
                 Debug.Log($"=============");
             }
             else
+#endif
             {
                 Debug.Log($"COMBAT: {attacker.UnitName} dealt {damage} damage to {defender.UnitName}");
             }
         }
+#endif
         
         // Check if defender was killed
         if (!defender.IsAlive())
@@ -238,10 +266,12 @@ public class CombatManager : MonoBehaviour
     {
         if (isApplicationQuitting) return;
         
+#if DEBUG_COMBAT
         if (enableCombatLogging)
         {
             Debug.Log($"💀 {victim.UnitName} ({victim.player}) was killed by {attacker.UnitName} ({attacker.player})!");
         }
+#endif
         
         // Fire event
         OnUnitKilled?.Invoke(attacker, victim);

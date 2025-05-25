@@ -26,7 +26,7 @@ namespace TurnClash.Units
         
         [Header("Defending")]
         [SerializeField] private bool isDefending = false; // Whether this unit is currently defending
-        [SerializeField] private bool debugDefending = false; // Debug defending actions
+        // Debug defending now controlled by DebugManager
         
         [Header("Grid Movement")]
         private Vector2Int currentGridPosition;
@@ -171,8 +171,9 @@ namespace TurnClash.Units
             // Check if target is defending - cannot attack defending units
             if (target.isDefending)
             {
-                if (debugCombat || debugDefending)
-                    Debug.LogWarning($"{unitName} cannot attack {target.unitName} - target is defending!");
+                #if DEBUG_COMBAT || DEBUG_UNITS
+            Debug.LogWarning($"{unitName} cannot attack {target.unitName} - target is defending!");
+#endif
                 return;
             }
             
@@ -385,8 +386,9 @@ namespace TurnClash.Units
             // Check if unit is defending - defending units cannot move
             if (isDefending)
             {
-                if (debugDefending)
-                    Debug.Log($"{unitName}: CanMoveTo failed - unit is defending");
+#if DEBUG_UNITS
+                Debug.Log($"{unitName}: CanMoveTo failed - unit is defending");
+#endif
                 return false;
             }
             
@@ -581,15 +583,17 @@ namespace TurnClash.Units
         {
             if (isDefending)
             {
-                if (debugDefending)
-                    Debug.LogWarning($"{unitName} is already defending");
+                #if DEBUG_UNITS
+            Debug.LogWarning($"{unitName} is already defending");
+#endif
                 return;
             }
             
             isDefending = true;
             
-            if (debugDefending)
-                Debug.Log($"{unitName} starts defending - cannot move, attack, or be attacked until next turn");
+#if DEBUG_UNITS
+            Debug.Log($"{unitName} starts defending - cannot move, attack, or be attacked until next turn");
+#endif
             
             // Apply visual effect
             UnitSelectable selectable = GetComponent<UnitSelectable>();
@@ -619,8 +623,9 @@ namespace TurnClash.Units
                 selectable.RemoveDefendingEffect();
             }
             
-            if (debugDefending)
-                Debug.Log($"{unitName} stops defending - can now move and attack");
+#if DEBUG_UNITS
+            Debug.Log($"{unitName} stops defending - can now move and attack");
+#endif
         }
         
         /// <summary>

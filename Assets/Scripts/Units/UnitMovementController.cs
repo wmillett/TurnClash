@@ -12,7 +12,7 @@ namespace TurnClash.Units
         [SerializeField] private bool enableArrowKeyMovement = true;
         [SerializeField] private bool enableDiagonalMovement = true; // Allow diagonal movement with key combinations
         [SerializeField] private float inputCooldown = 0.2f; // Prevent rapid movement
-        [SerializeField] private bool debugMovement = false; // Re-disabled after fixing turn change integration
+        // Debug movement now controlled by DebugManager
         [SerializeField] private bool respectTurnSystem = true; // Whether to check turn system before allowing movement
         [SerializeField] private bool workWithMovementPreview = true; // Allow both arrow keys and clickable tiles
         
@@ -91,8 +91,10 @@ namespace TurnClash.Units
         private void OnApplicationQuit()
         {
             isApplicationQuitting = true;
-            if (debugMovement)
+            #if DEBUG_MOVEMENT
                 Debug.Log("UnitMovementController: Application quitting, preventing new instance creation");
+
+            #endif
         }
         
         private void HandleArrowKeyInput()
@@ -100,8 +102,10 @@ namespace TurnClash.Units
             // Check if game is over - don't allow arrow key movement when victory screen is active
             if (IsGameOver())
             {
-                if (debugMovement)
+                #if DEBUG_MOVEMENT
                     Debug.Log("UnitMovementController: Cannot process arrow keys - game is over (victory screen active)");
+
+                #endif
                 return;
             }
             
@@ -170,8 +174,10 @@ namespace TurnClash.Units
             // Check if game is over - don't allow defending when victory screen is active
             if (IsGameOver())
             {
-                if (debugMovement)
+                #if DEBUG_MOVEMENT
                     Debug.Log("UnitMovementController: Cannot defend - game is over (victory screen active)");
+
+                #endif
                 return;
             }
             
@@ -180,16 +186,20 @@ namespace TurnClash.Units
             
             if (selectionManager == null || !selectionManager.HasSelection)
             {
-                if (debugMovement)
+                #if DEBUG_MOVEMENT
                     Debug.Log("UnitMovementController: No unit selected for defend action");
+
+                #endif
                 return;
             }
             
             UnitSelectable selectedUnitSelectable = selectionManager.FirstSelectedUnit;
             if (selectedUnitSelectable == null)
             {
-                if (debugMovement)
+                #if DEBUG_MOVEMENT
                     Debug.Log("UnitMovementController: Selected unit is null for defend action");
+
+                #endif
                 return;
             }
             
@@ -197,8 +207,10 @@ namespace TurnClash.Units
             Unit selectedUnit = selectedUnitSelectable.GetComponent<Unit>();
             if (selectedUnit == null)
             {
-                if (debugMovement)
+                #if DEBUG_MOVEMENT
                     Debug.LogError("UnitMovementController: Selected object doesn't have a Unit component for defend action");
+
+                #endif
                 return;
             }
             
@@ -208,17 +220,16 @@ namespace TurnClash.Units
                 TurnManager turnManager = TurnManager.Instance;
                 if (turnManager != null && !turnManager.CanUnitMove(selectedUnit))
                 {
-                    if (debugMovement)
+#if DEBUG_MOVEMENT
+                    if (turnManager.CurrentPlayer != selectedUnit.player)
                     {
-                        if (turnManager.CurrentPlayer != selectedUnit.player)
-                        {
-                            Debug.Log($"UnitMovementController: Cannot defend - it's {turnManager.CurrentPlayer}'s turn, not {selectedUnit.player}'s");
-                        }
-                        else
-                        {
-                            Debug.Log($"UnitMovementController: Cannot defend - no moves remaining this turn ({turnManager.CurrentMoveCount}/{turnManager.MaxMovesPerTurn})");
-                        }
+                        Debug.Log($"UnitMovementController: Cannot defend - it's {turnManager.CurrentPlayer}'s turn, not {selectedUnit.player}'s");
                     }
+                    else
+                    {
+                        Debug.Log($"UnitMovementController: Cannot defend - no moves remaining this turn ({turnManager.CurrentMoveCount}/{turnManager.MaxMovesPerTurn})");
+                    }
+#endif
                     return;
                 }
             }
@@ -226,8 +237,10 @@ namespace TurnClash.Units
             // Check if unit is already defending
             if (selectedUnit.IsDefending)
             {
-                if (debugMovement)
+                #if DEBUG_MOVEMENT
                     Debug.Log($"UnitMovementController: {selectedUnit.UnitName} is already defending");
+
+                #endif
                 return;
             }
             
@@ -244,8 +257,11 @@ namespace TurnClash.Units
                 }
             }
             
-            if (debugMovement)
+            #if DEBUG_MOVEMENT
                 Debug.Log($"UnitMovementController: {selectedUnit.UnitName} is now defending!");
+
+            
+            #endif
         }
         
         private void MoveSelectedUnit(Vector2Int direction)
@@ -257,16 +273,20 @@ namespace TurnClash.Units
             
             if (selectionManager == null || !selectionManager.HasSelection)
             {
-                if (debugMovement)
+                #if DEBUG_MOVEMENT
                     Debug.Log("UnitMovementController: No unit selected for movement");
+
+                #endif
                 return;
             }
             
             UnitSelectable selectedUnitSelectable = selectionManager.FirstSelectedUnit;
             if (selectedUnitSelectable == null)
             {
-                if (debugMovement)
+                #if DEBUG_MOVEMENT
                     Debug.Log("UnitMovementController: Selected unit is null");
+
+                #endif
                 return;
             }
             
@@ -274,8 +294,10 @@ namespace TurnClash.Units
             Unit selectedUnit = selectedUnitSelectable.GetComponent<Unit>();
             if (selectedUnit == null)
             {
-                if (debugMovement)
+                #if DEBUG_MOVEMENT
                     Debug.LogError("UnitMovementController: Selected object doesn't have a Unit component");
+
+                #endif
                 return;
             }
             
@@ -285,17 +307,16 @@ namespace TurnClash.Units
                 TurnManager turnManager = TurnManager.Instance;
                 if (turnManager != null && !turnManager.CanUnitMove(selectedUnit))
                 {
-                    if (debugMovement)
+#if DEBUG_MOVEMENT
+                    if (turnManager.CurrentPlayer != selectedUnit.player)
                     {
-                        if (turnManager.CurrentPlayer != selectedUnit.player)
-                        {
-                            Debug.Log($"UnitMovementController: Cannot move {selectedUnit.player} unit - it's {turnManager.CurrentPlayer}'s turn");
-                        }
-                        else
-                        {
-                            Debug.Log($"UnitMovementController: Cannot move unit - no moves remaining this turn ({turnManager.CurrentMoveCount}/{turnManager.MaxMovesPerTurn})");
-                        }
+                        Debug.Log($"UnitMovementController: Cannot move {selectedUnit.player} unit - it's {turnManager.CurrentPlayer}'s turn");
                     }
+                    else
+                    {
+                        Debug.Log($"UnitMovementController: Cannot move unit - no moves remaining this turn ({turnManager.CurrentMoveCount}/{turnManager.MaxMovesPerTurn})");
+                    }
+#endif
                     return;
                 }
             }
@@ -311,22 +332,21 @@ namespace TurnClash.Units
                 enemyAtTarget = selectedUnit.GetEnemyAtPosition(targetPos);
             }
             
-            if (debugMovement)
+#if DEBUG_MOVEMENT
+            string movementType = GetDirectionName(direction);
+            if (enemyAtTarget != null)
             {
-                string movementType = GetDirectionName(direction);
-                if (enemyAtTarget != null)
+                Debug.Log($"UnitMovementController: {selectedUnit.player} unit will attack {enemyAtTarget.UnitName} at {targetPos} ({movementType})");
+                if (showCombatPreview)
                 {
-                    Debug.Log($"UnitMovementController: {selectedUnit.player} unit will attack {enemyAtTarget.UnitName} at {targetPos} ({movementType})");
-                    if (showCombatPreview)
-                    {
-                        Debug.Log($"Combat Preview: {selectedUnit.GetCombatPreview(enemyAtTarget)}");
-                    }
-                }
-                else
-                {
-                    Debug.Log($"UnitMovementController: Attempting to move {selectedUnit.player} unit {movementType} from {currentPos} to {targetPos}");
+                    Debug.Log($"Combat Preview: {selectedUnit.GetCombatPreview(enemyAtTarget)}");
                 }
             }
+            else
+            {
+                Debug.Log($"UnitMovementController: Attempting to move {selectedUnit.player} unit {movementType} from {currentPos} to {targetPos}");
+            }
+#endif
             
             // Try to move/attack using the enhanced movement method
             bool actionSuccessful = false;
@@ -366,25 +386,23 @@ namespace TurnClash.Units
                     MovementPreview.Instance.RefreshCurrentUnitPreview();
                 }
                 
-                if (debugMovement)
+#if DEBUG_MOVEMENT
+                string movementType = GetDirectionName(direction);
+                if (enemyAtTarget != null)
                 {
-                    string movementType = GetDirectionName(direction);
-                    if (enemyAtTarget != null)
-                    {
-                        Debug.Log($"UnitMovementController: Combat completed - {selectedUnit.UnitName} attacked {enemyAtTarget.UnitName} ({movementType})");
-                    }
-                    else
-                    {
-                        Debug.Log($"UnitMovementController: Successfully moved {selectedUnit.player} unit {movementType} to {targetPos}");
-                    }
+                    Debug.Log($"UnitMovementController: Combat completed - {selectedUnit.UnitName} attacked {enemyAtTarget.UnitName} ({movementType})");
                 }
+                else
+                {
+                    Debug.Log($"UnitMovementController: Successfully moved {selectedUnit.player} unit {movementType} to {targetPos}");
+                }
+#endif
             }
             else
             {
-                if (debugMovement)
-                {
-                    Debug.Log($"UnitMovementController: Action failed - cannot move/attack at {targetPos}");
-                }
+#if DEBUG_MOVEMENT
+                Debug.Log($"UnitMovementController: Action failed - cannot move/attack at {targetPos}");
+#endif
             }
         }
         
@@ -394,8 +412,10 @@ namespace TurnClash.Units
         public void SetMovementEnabled(bool enabled)
         {
             enableArrowKeyMovement = enabled;
-            if (debugMovement)
+            #if DEBUG_MOVEMENT
                 Debug.Log($"UnitMovementController: Arrow key movement {(enabled ? "enabled" : "disabled")}");
+
+            #endif
         }
         
         /// <summary>
@@ -412,8 +432,10 @@ namespace TurnClash.Units
         public void SetTurnSystemRespect(bool respect)
         {
             respectTurnSystem = respect;
-            if (debugMovement)
+            #if DEBUG_MOVEMENT
                 Debug.Log($"UnitMovementController: Turn system respect {(respect ? "enabled" : "disabled")}");
+
+            #endif
         }
         
         /// <summary>
@@ -422,8 +444,10 @@ namespace TurnClash.Units
         public void SetCombatEnabled(bool enabled)
         {
             enableCombat = enabled;
-            if (debugMovement)
+            #if DEBUG_MOVEMENT
                 Debug.Log($"UnitMovementController: Combat system {(enabled ? "enabled" : "disabled")}");
+
+            #endif
         }
         
         /// <summary>
@@ -432,8 +456,10 @@ namespace TurnClash.Units
         public void SetWorkWithMovementPreview(bool enabled)
         {
             workWithMovementPreview = enabled;
-            if (debugMovement)
+            #if DEBUG_MOVEMENT
                 Debug.Log($"UnitMovementController: Movement preview cooperation {(enabled ? "enabled" : "disabled")}");
+
+            #endif
         }
         
         /// <summary>
@@ -442,8 +468,10 @@ namespace TurnClash.Units
         public void SetDiagonalMovementEnabled(bool enabled)
         {
             enableDiagonalMovement = enabled;
-            if (debugMovement)
+            #if DEBUG_MOVEMENT
                 Debug.Log($"UnitMovementController: Diagonal movement {(enabled ? "enabled" : "disabled")}");
+
+            #endif
         }
         
         /// <summary>
@@ -635,8 +663,10 @@ namespace TurnClash.Units
         
         private void OnDestroy()
         {
-            if (debugMovement)
+            #if DEBUG_MOVEMENT
                 Debug.Log("UnitMovementController: OnDestroy called");
+
+            #endif
                 
             // Clear singleton reference
             if (instance == this)
@@ -646,8 +676,10 @@ namespace TurnClash.Units
             
             // Only set quitting flag if we're actually quitting the application
             // Don't set it during scene changes or manual destroy
-            if (debugMovement)
+            #if DEBUG_MOVEMENT
                 Debug.Log("UnitMovementController: Cleanup complete, instance cleared");
+
+            #endif
         }
     }
 } 

@@ -14,7 +14,7 @@ namespace TurnClash.Units
         [SerializeField] private Color defendingTint = new Color(0.6f, 0.6f, 0.9f, 1f); // More visible blue-grey tint for defending
         [SerializeField] private float glowIntensity = 2f;
         [SerializeField] private bool useEmission = true;
-        [SerializeField] private bool debugVisualEffects = false; // Debug visual effect changes
+        // Debug visual effects now controlled by DebugManager
         
         // Visual feedback state
         private bool isAttackableHighlighted = false;
@@ -230,8 +230,9 @@ namespace TurnClash.Units
         {
             if (isDefendingHighlighted) return;
             
-            if (debugVisualEffects)
-                Debug.Log($"UnitSelectable {name}: Showing defending effect");
+#if DEBUG_VISUAL_EFFECTS
+            Debug.Log($"UnitSelectable {name}: Showing defending effect");
+#endif
             
             isDefendingHighlighted = true;
             
@@ -248,8 +249,9 @@ namespace TurnClash.Units
             
             isDefendingHighlighted = false;
             
-            if (debugVisualEffects)
-                Debug.Log($"UnitSelectable {name}: Removing defending effect");
+#if DEBUG_VISUAL_EFFECTS
+            Debug.Log($"UnitSelectable {name}: Removing defending effect");
+#endif
             
             // Restore the proper visual state based on current conditions
             RestoreProperVisualState();
@@ -331,8 +333,9 @@ namespace TurnClash.Units
         /// </summary>
         private void RestoreProperVisualState()
         {
-            if (debugVisualEffects)
-                Debug.Log($"UnitSelectable {name}: Restoring visual state - Selected: {isSelected}, Attackable: {isAttackableHighlighted}, Defending: {isDefendingHighlighted}");
+#if DEBUG_VISUAL_EFFECTS
+            Debug.Log($"UnitSelectable {name}: Restoring visual state - Selected: {isSelected}, Attackable: {isAttackableHighlighted}, Defending: {isDefendingHighlighted}");
+#endif
             
             // First, reset all visual effects to team color
             Color teamColor = GetCurrentTeamColor();
@@ -371,27 +374,31 @@ namespace TurnClash.Units
             // Apply defending tint first if unit is defending
             if (isDefendingHighlighted)
             {
-                if (debugVisualEffects)
-                    Debug.Log($"UnitSelectable {name}: Applying defending tint");
+#if DEBUG_VISUAL_EFFECTS
+                Debug.Log($"UnitSelectable {name}: Applying defending tint");
+#endif
                 EnableDefendingTint();
             }
             
             // Then apply emission effects on top
             if (isAttackableHighlighted)
             {
-                if (debugVisualEffects)
-                    Debug.Log($"UnitSelectable {name}: Applying attackable glow");
+#if DEBUG_VISUAL_EFFECTS
+                Debug.Log($"UnitSelectable {name}: Applying attackable glow");
+#endif
                 EnableAttackableGlow();
             }
             else if (isSelected)
             {
-                if (debugVisualEffects)
-                    Debug.Log($"UnitSelectable {name}: Applying selection glow");
+#if DEBUG_VISUAL_EFFECTS
+                Debug.Log($"UnitSelectable {name}: Applying selection glow");
+#endif
                 EnableGlow();
             }
             
-            if (debugVisualEffects)
-                Debug.Log($"UnitSelectable {name}: Visual state restoration complete");
+#if DEBUG_VISUAL_EFFECTS
+            Debug.Log($"UnitSelectable {name}: Visual state restoration complete");
+#endif
         }
         
         /// <summary>
@@ -403,8 +410,9 @@ namespace TurnClash.Units
             {
                 UnitHoverTooltip.OnUnitHoverEnter(unit);
                 
-                if (debugVisualEffects)
-                    Debug.Log($"UnitSelectable {name}: Mouse entered, triggering hover tooltip");
+#if DEBUG_VISUAL_EFFECTS
+                Debug.Log($"UnitSelectable {name}: Mouse entered, triggering hover tooltip");
+#endif
             }
         }
         
@@ -417,8 +425,9 @@ namespace TurnClash.Units
             {
                 UnitHoverTooltip.OnUnitHoverExit(unit);
                 
-                if (debugVisualEffects)
-                    Debug.Log($"UnitSelectable {name}: Mouse exited, clearing hover tooltip");
+#if DEBUG_VISUAL_EFFECTS
+                Debug.Log($"UnitSelectable {name}: Mouse exited, clearing hover tooltip");
+#endif
             }
         }
         

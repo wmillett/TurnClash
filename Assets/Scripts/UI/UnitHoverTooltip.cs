@@ -12,7 +12,7 @@ namespace TurnClash.UI
         [Header("Hover Settings")]
         [SerializeField] private bool enableHoverTooltips = true;
         [SerializeField] private float hoverDelay = 0.1f; // Small delay before showing tooltip
-        [SerializeField] private bool debugHover = false;
+        // Debug hover now controlled by DebugManager
         
         // Static tracking for the hover system
         private static UnitHoverTooltip instance;
@@ -68,8 +68,9 @@ namespace TurnClash.UI
                 enabled = false;
             }
             
-            if (debugHover)
-                Debug.Log("UnitHoverTooltip: Initialized successfully");
+#if DEBUG_HOVER_TOOLTIP
+            Debug.Log("UnitHoverTooltip: Initialized successfully");
+#endif
         }
         
         private void Update()
@@ -126,8 +127,9 @@ namespace TurnClash.UI
             // Start new hover delay
             pendingHoverUnit = unit;
             
-            if (debugHover)
-                Debug.Log($"UnitHoverTooltip: Starting hover delay for {unit.UnitName}");
+#if DEBUG_HOVER_TOOLTIP
+            Debug.Log($"UnitHoverTooltip: Starting hover delay for {unit.UnitName}");
+#endif
         }
         
         /// <summary>
@@ -141,8 +143,9 @@ namespace TurnClash.UI
                 pendingHoverUnit = null;
                 hoverTimer = 0f;
                 
-                if (debugHover)
-                    Debug.Log($"UnitHoverTooltip: Cancelled pending hover for {unit.UnitName}");
+#if DEBUG_HOVER_TOOLTIP
+                Debug.Log($"UnitHoverTooltip: Cancelled pending hover for {unit.UnitName}");
+#endif
             }
             
             // Clear current hover if it matches
@@ -150,8 +153,9 @@ namespace TurnClash.UI
             {
                 SetHoveredUnit(null);
                 
-                if (debugHover)
-                    Debug.Log($"UnitHoverTooltip: Stopped hovering {unit.UnitName}");
+#if DEBUG_HOVER_TOOLTIP
+                Debug.Log($"UnitHoverTooltip: Stopped hovering {unit.UnitName}");
+#endif
             }
         }
         
@@ -168,13 +172,12 @@ namespace TurnClash.UI
             // Update the SelectionInfoUI based on priority
             UpdateSelectionUI();
             
-            if (debugHover)
-            {
-                if (unit != null)
-                    Debug.Log($"UnitHoverTooltip: Now hovering {unit.UnitName}");
-                else
-                    Debug.Log("UnitHoverTooltip: No longer hovering any unit");
-            }
+#if DEBUG_HOVER_TOOLTIP
+            if (unit != null)
+                Debug.Log($"UnitHoverTooltip: Now hovering {unit.UnitName}");
+            else
+                Debug.Log("UnitHoverTooltip: No longer hovering any unit");
+#endif
         }
         
         /// <summary>
