@@ -56,6 +56,9 @@ namespace TurnClash.UI
             
             instance = this;
             isQuitting = false;
+            
+            // Don't persist between scenes - let each scene create its own instance
+            // This prevents "objects not cleaned up" warnings
         }
         
         private void Start()

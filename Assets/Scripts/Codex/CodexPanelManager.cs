@@ -330,6 +330,24 @@ public class CodexPanelManager : MonoBehaviour
             organizationsButton.onClick.AddListener(() => OnCategorySelected(CodexCategory.Organizations));
     }
     
+    /// <summary>
+    /// Refresh UI layout - useful when aspect ratio changes
+    /// Only refresh if panel is not currently animating
+    /// </summary>
+    public void RefreshUILayout()
+    {
+        // Don't refresh during animation or when panel is hidden
+        if (uiSetup != null && isPanelVisible && codexPanel.gameObject.activeInHierarchy)
+        {
+            // Only refresh the internal layout, not the panel position
+            // to avoid interfering with slide animations
+            uiSetup.SetupEntryPage();
+            uiSetup.SetupCategoryContainer();
+            uiSetup.SetupSubcategoryContainer();
+            Debug.Log("CodexPanelManager: UI layout refreshed for aspect ratio change (partial refresh)");
+        }
+    }
+    
     public void TogglePanel()
     {
         // Check if game is over - don't allow codex access when victory screen is active
@@ -346,19 +364,14 @@ public class CodexPanelManager : MonoBehaviour
         {
             codexPanel.gameObject.SetActive(true);
 
-            // Force scale to be exactly 1
+            // Force scale to be exactly 1 (important for Canvas Scaler compatibility)
             codexPanel.localScale = Vector3.one;
 
-            // Get screen dimensions
-            float screenWidth = Screen.width;
-            float screenHeight = Screen.height;
+            // DON'T call SetupUI() here - it interferes with the animation positioning
+            // The UI should already be set up from the initial setup
             
-            // Set consistent panel size (30% width, 80% height)
-            float widthPercent = 0.3f;
-            float heightPercent = 0.8f;
-            
-            // Set size
-            codexPanel.sizeDelta = new Vector2(screenWidth * widthPercent, screenHeight * heightPercent);
+            // Ensure the panel starts at the correct off-screen position before animating
+            codexPanel.anchoredPosition = new Vector2(codexPanel.rect.width, 0);
 
             // Ensure toggle button is a child of the panel
             if (toggleButton != null)
@@ -379,6 +392,7 @@ public class CodexPanelManager : MonoBehaviour
         else
         {
             // Show menu page before closing
+            ShowMenuPage();
             
             // Animate panel sliding out to the right
             codexPanel.DOAnchorPosX(codexPanel.rect.width, slideDuration)
@@ -395,7 +409,6 @@ public class CodexPanelManager : MonoBehaviour
                     {
                         panelMovement.SetEnabled(true);
                     }
-                    ShowMenuPage();
                 });
         }
     }
@@ -659,6 +672,12 @@ public class CodexPanelManager : MonoBehaviour
         menuPage.SetActive(false);
         entryPage.SetActive(true);
         
+        // Hide CategoryContainer when EntryPage is active
+        if (categoryContainer != null)
+        {
+            categoryContainer.gameObject.SetActive(false);
+        }
+        
         // Reset entry scroll position to top
         if (entryScrollView != null && entryScrollView.content != null)
         {
@@ -671,6 +690,12 @@ public class CodexPanelManager : MonoBehaviour
         Debug.Log("Showing menu page");
         entryPage.SetActive(false);
         menuPage.SetActive(true);
+        
+        // Show CategoryContainer when MenuPage is active
+        if (categoryContainer != null)
+        {
+            categoryContainer.gameObject.SetActive(true);
+        }
         
         // Reset menu scroll position to top
         if (menuScrollView != null && menuScrollView.content != null)

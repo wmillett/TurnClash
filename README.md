@@ -137,14 +137,6 @@ Assets/
 └── Prefabs/             # Reusable game objects
 ```
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit pull requests or open issues for bugs and feature requests.
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
 ## 🎯 Future Enhancements
 
 - [ ] Multiple unit types with unique abilities
@@ -153,6 +145,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [ ] AI opponent for single-player mode
 - [ ] Network multiplayer support
 - [ ] Save/load game functionality
+- [ ] Map customization
+- [ ] More players
 
 ---
 
