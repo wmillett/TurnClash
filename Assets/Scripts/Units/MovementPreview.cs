@@ -15,7 +15,7 @@ namespace TurnClash.Units
         [SerializeField] private Color movementTileColor = new Color(0.2f, 1f, 0.2f, 0.7f); // Green glow
         [SerializeField] private Color attackTileColor = new Color(1f, 0.2f, 0.2f, 0.7f); // Red glow for attack
         [SerializeField] private int movementRange = 1; // How many tiles away can the unit move
-        [SerializeField] private bool debugPreview = false; // Re-disabled after fixing turn change integration
+        [SerializeField] private bool debugPreview = false; // Re-disabled after implementing enemy unit clicking
         
         // Singleton instance
         private static MovementPreview instance;
@@ -49,6 +49,7 @@ namespace TurnClash.Units
         private Unit currentPreviewUnit;
         private List<IsometricGroundTile> highlightedTiles = new List<IsometricGroundTile>();
         private Dictionary<IsometricGroundTile, Material> originalMaterials = new Dictionary<IsometricGroundTile, Material>();
+        private List<UnitSelectable> highlightedEnemies = new List<UnitSelectable>(); // Track highlighted enemy units
         
         private void Awake()
         {
@@ -221,6 +222,9 @@ namespace TurnClash.Units
                     if (IsValidMovementPosition(unit, targetPos))
                     {
                         HighlightTile(targetPos, unit);
+                        
+                        // Also highlight any enemy units at this position
+                        HighlightEnemyUnitAtPosition(targetPos, unit);
                     }
                 }
             }
@@ -288,10 +292,10 @@ namespace TurnClash.Units
         
         private void HideMovementPreview()
         {
-            if (debugPreview && highlightedTiles.Count > 0)
-                Debug.Log($"MovementPreview: Hiding preview ({highlightedTiles.Count} tiles)");
+            if (debugPreview && (highlightedTiles.Count > 0 || highlightedEnemies.Count > 0))
+                Debug.Log($"MovementPreview: Hiding preview ({highlightedTiles.Count} tiles, {highlightedEnemies.Count} enemies)");
             
-            // Restore original materials
+            // Restore original materials for tiles
             foreach (var tile in highlightedTiles)
             {
                 if (tile != null && originalMaterials.ContainsKey(tile))
@@ -311,9 +315,39 @@ namespace TurnClash.Units
                 }
             }
             
+            // Remove enemy unit highlights
+            foreach (var enemyUnit in highlightedEnemies)
+            {
+                if (enemyUnit != null)
+                {
+                    enemyUnit.RemoveAttackableHighlight();
+                }
+            }
+            
             highlightedTiles.Clear();
+            highlightedEnemies.Clear();
             originalMaterials.Clear();
             currentPreviewUnit = null;
+        }
+        
+        /// <summary>
+        /// Highlight enemy units at the specified position
+        /// </summary>
+        private void HighlightEnemyUnitAtPosition(Vector2Int position, Unit friendlyUnit)
+        {
+            Unit enemyAtPosition = friendlyUnit.GetEnemyAtPosition(position);
+            if (enemyAtPosition != null)
+            {
+                UnitSelectable enemySelectable = enemyAtPosition.GetComponent<UnitSelectable>();
+                if (enemySelectable != null && !highlightedEnemies.Contains(enemySelectable))
+                {
+                    enemySelectable.HighlightAsAttackable();
+                    highlightedEnemies.Add(enemySelectable);
+                    
+                    if (debugPreview)
+                        Debug.Log($"MovementPreview: Highlighted enemy {enemyAtPosition.UnitName} as attackable");
+                }
+            }
         }
         
         private void HandleTileClick()
@@ -410,6 +444,43 @@ namespace TurnClash.Units
         public void SetMovementRange(int range)
         {
             movementRange = Mathf.Max(1, range);
+        }
+        
+        /// <summary>
+        /// Get the currently previewed unit (for external access)
+        /// </summary>
+        public Unit GetCurrentPreviewUnit()
+        {
+            return currentPreviewUnit;
+        }
+        
+        /// <summary>
+        /// Called when an enemy unit is clicked directly to attack it
+        /// </summary>
+        public void OnEnemyUnitClicked(UnitSelectable enemyUnitSelectable)
+        {
+            if (currentPreviewUnit == null || isApplicationQuitting)
+            {
+                if (debugPreview)
+                    Debug.Log("MovementPreview: Enemy unit clicked but no current preview unit");
+                return;
+            }
+            
+            Unit enemyUnit = enemyUnitSelectable.GetUnit();
+            if (enemyUnit == null)
+            {
+                if (debugPreview)
+                    Debug.LogError("MovementPreview: Enemy unit clicked but Unit component is null");
+                return;
+            }
+            
+            Vector2Int enemyPosition = enemyUnit.GetGridPosition();
+            
+            if (debugPreview)
+                Debug.Log($"MovementPreview: Enemy unit {enemyUnit.UnitName} clicked at {enemyPosition}, attacking with {currentPreviewUnit.UnitName}");
+            
+            // Use the same logic as tile clicking - this will handle the attack
+            OnTileClicked(enemyPosition);
         }
         
         /// <summary>

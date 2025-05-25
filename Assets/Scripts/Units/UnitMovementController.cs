@@ -10,6 +10,7 @@ namespace TurnClash.Units
     {
         [Header("Movement Settings")]
         [SerializeField] private bool enableArrowKeyMovement = true;
+        [SerializeField] private bool enableDiagonalMovement = true; // Allow diagonal movement with key combinations
         [SerializeField] private float inputCooldown = 0.2f; // Prevent rapid movement
         [SerializeField] private bool debugMovement = false; // Re-disabled after fixing turn change integration
         [SerializeField] private bool respectTurnSystem = true; // Whether to check turn system before allowing movement
@@ -98,33 +99,53 @@ namespace TurnClash.Units
             // Note: Removed the check that disabled arrow keys when movement preview is active
             // Both systems (arrow keys and clickable tiles) should work together
             
-            // Check each arrow key
+            // Check each arrow key independently to allow diagonal movement
             Vector2Int direction = Vector2Int.zero;
             bool inputDetected = false;
             
-            // Up Arrow (moves in positive Y direction in grid space)
+            // Check vertical movement (Up/Down)
             if (Input.GetKeyDown(KeyCode.UpArrow))
             {
-                direction = new Vector2Int(0, 1);
+                direction.y = 1; // Positive Y direction in grid space
                 inputDetected = true;
             }
-            // Down Arrow (moves in negative Y direction in grid space)
             else if (Input.GetKeyDown(KeyCode.DownArrow))
             {
-                direction = new Vector2Int(0, -1);
+                direction.y = -1; // Negative Y direction in grid space
                 inputDetected = true;
             }
-            // Left Arrow (moves in negative X direction in grid space)
-            else if (Input.GetKeyDown(KeyCode.LeftArrow))
+            
+            // Check horizontal movement (Left/Right) - can combine with vertical for diagonal
+            if (enableDiagonalMovement)
             {
-                direction = new Vector2Int(-1, 0);
-                inputDetected = true;
+                // Diagonal movement: allow both horizontal and vertical input simultaneously
+                if (Input.GetKeyDown(KeyCode.LeftArrow))
+                {
+                    direction.x = -1; // Negative X direction in grid space
+                    inputDetected = true;
+                }
+                else if (Input.GetKeyDown(KeyCode.RightArrow))
+                {
+                    direction.x = 1; // Positive X direction in grid space
+                    inputDetected = true;
+                }
             }
-            // Right Arrow (moves in positive X direction in grid space)
-            else if (Input.GetKeyDown(KeyCode.RightArrow))
+            else
             {
-                direction = new Vector2Int(1, 0);
-                inputDetected = true;
+                // Non-diagonal movement: only allow horizontal if no vertical input
+                if (direction.y == 0)
+                {
+                    if (Input.GetKeyDown(KeyCode.LeftArrow))
+                    {
+                        direction.x = -1; // Negative X direction in grid space
+                        inputDetected = true;
+                    }
+                    else if (Input.GetKeyDown(KeyCode.RightArrow))
+                    {
+                        direction.x = 1; // Positive X direction in grid space
+                        inputDetected = true;
+                    }
+                }
             }
             
             // Process movement if input was detected and cooldown has passed
@@ -200,9 +221,10 @@ namespace TurnClash.Units
             
             if (debugMovement)
             {
+                string movementType = GetDirectionName(direction);
                 if (enemyAtTarget != null)
                 {
-                    Debug.Log($"UnitMovementController: {selectedUnit.player} unit will attack {enemyAtTarget.UnitName} at {targetPos}");
+                    Debug.Log($"UnitMovementController: {selectedUnit.player} unit will attack {enemyAtTarget.UnitName} at {targetPos} ({movementType})");
                     if (showCombatPreview)
                     {
                         Debug.Log($"Combat Preview: {selectedUnit.GetCombatPreview(enemyAtTarget)}");
@@ -210,7 +232,7 @@ namespace TurnClash.Units
                 }
                 else
                 {
-                    Debug.Log($"UnitMovementController: Attempting to move {selectedUnit.player} unit from {currentPos} to {targetPos}");
+                    Debug.Log($"UnitMovementController: Attempting to move {selectedUnit.player} unit {movementType} from {currentPos} to {targetPos}");
                 }
             }
             
@@ -254,13 +276,14 @@ namespace TurnClash.Units
                 
                 if (debugMovement)
                 {
+                    string movementType = GetDirectionName(direction);
                     if (enemyAtTarget != null)
                     {
-                        Debug.Log($"UnitMovementController: Combat completed - {selectedUnit.UnitName} attacked {enemyAtTarget.UnitName}");
+                        Debug.Log($"UnitMovementController: Combat completed - {selectedUnit.UnitName} attacked {enemyAtTarget.UnitName} ({movementType})");
                     }
                     else
                     {
-                        Debug.Log($"UnitMovementController: Successfully moved {selectedUnit.player} unit to {targetPos}");
+                        Debug.Log($"UnitMovementController: Successfully moved {selectedUnit.player} unit {movementType} to {targetPos}");
                     }
                 }
             }
@@ -322,6 +345,16 @@ namespace TurnClash.Units
         }
         
         /// <summary>
+        /// Enable or disable diagonal movement
+        /// </summary>
+        public void SetDiagonalMovementEnabled(bool enabled)
+        {
+            enableDiagonalMovement = enabled;
+            if (debugMovement)
+                Debug.Log($"UnitMovementController: Diagonal movement {(enabled ? "enabled" : "disabled")}");
+        }
+        
+        /// <summary>
         /// Manual movement method for other systems to use
         /// </summary>
         public bool TryMoveSelectedUnit(Vector2Int direction)
@@ -366,6 +399,7 @@ namespace TurnClash.Units
         
         /// <summary>
         /// Get information about what would happen if the selected unit moved in a direction
+        /// Supports diagonal movement analysis
         /// </summary>
         public string GetMovePreview(Vector2Int direction)
         {
@@ -386,23 +420,43 @@ namespace TurnClash.Units
             Vector2Int currentPos = selectedUnit.GetGridPosition();
             Vector2Int targetPos = currentPos + direction;
             
+            // Get direction description for better feedback
+            string directionName = GetDirectionName(direction);
+            
             Unit enemyAtTarget = selectedUnit.GetEnemyAtPosition(targetPos);
             if (enemyAtTarget != null)
             {
-                return selectedUnit.GetCombatPreview(enemyAtTarget);
+                return $"{directionName}: {selectedUnit.GetCombatPreview(enemyAtTarget)}";
             }
             else if (selectedUnit.CanMoveTo(targetPos))
             {
-                return $"Move to {targetPos}";
+                return $"{directionName}: Move to {targetPos}";
             }
             else
             {
-                return "Cannot move there";
+                return $"{directionName}: Cannot move there";
             }
         }
         
         /// <summary>
+        /// Get a human-readable name for a movement direction
+        /// </summary>
+        private string GetDirectionName(Vector2Int direction)
+        {
+            if (direction.x == 0 && direction.y == 1) return "North";
+            if (direction.x == 0 && direction.y == -1) return "South";
+            if (direction.x == -1 && direction.y == 0) return "West";
+            if (direction.x == 1 && direction.y == 0) return "East";
+            if (direction.x == 1 && direction.y == 1) return "Northeast";
+            if (direction.x == -1 && direction.y == 1) return "Northwest";
+            if (direction.x == 1 && direction.y == -1) return "Southeast";
+            if (direction.x == -1 && direction.y == -1) return "Southwest";
+            return "Unknown";
+        }
+        
+        /// <summary>
         /// Get movement direction based on arrow key input (for external use)
+        /// Supports diagonal movement by detecting key combinations
         /// </summary>
         public Vector2Int GetMovementInput()
         {
@@ -411,15 +465,32 @@ namespace TurnClash.Units
                 
             Vector2Int direction = Vector2Int.zero;
             
+            // Check vertical input (Up/Down)
             if (Input.GetKey(KeyCode.UpArrow))
                 direction.y = 1;
             else if (Input.GetKey(KeyCode.DownArrow))
                 direction.y = -1;
                 
-            if (Input.GetKey(KeyCode.LeftArrow))
-                direction.x = -1;
-            else if (Input.GetKey(KeyCode.RightArrow))
-                direction.x = 1;
+            // Check horizontal input (Left/Right)
+            if (enableDiagonalMovement)
+            {
+                // Diagonal movement: allow both horizontal and vertical input simultaneously
+                if (Input.GetKey(KeyCode.LeftArrow))
+                    direction.x = -1;
+                else if (Input.GetKey(KeyCode.RightArrow))
+                    direction.x = 1;
+            }
+            else
+            {
+                // Non-diagonal movement: only allow horizontal if no vertical input
+                if (direction.y == 0)
+                {
+                    if (Input.GetKey(KeyCode.LeftArrow))
+                        direction.x = -1;
+                    else if (Input.GetKey(KeyCode.RightArrow))
+                        direction.x = 1;
+                }
+            }
                 
             return direction;
         }

@@ -8,9 +8,13 @@ namespace TurnClash.Units
     public class UnitSelectable : MonoBehaviour
     {
         [Header("Highlight Settings")]
-        [SerializeField] private Color glowColor = new Color(1f, 0.8f, 0f, 1f); // Golden glow
+        [SerializeField] private Color glowColor = new Color(1f, 0.8f, 0f, 1f); // Golden glow for selection
+        [SerializeField] private Color attackableColor = new Color(1f, 0.2f, 0.2f, 1f); // Red glow for attackable enemies
         [SerializeField] private float glowIntensity = 2f;
         [SerializeField] private bool useEmission = true;
+        
+        // Visual feedback state
+        private bool isAttackableHighlighted = false;
         
         private Unit unit;
         private List<Renderer> renderers;
@@ -51,8 +55,41 @@ namespace TurnClash.Units
         
         private void OnMouseDown()
         {
-            // Handle unit selection when clicked
+            // Check if movement preview is active and this unit can be attacked
+            if (MovementPreview.Instance != null && CanBeAttackedByPreviewUnit())
+            {
+                // Attack this unit instead of selecting it
+                MovementPreview.Instance.OnEnemyUnitClicked(this);
+                return;
+            }
+            
+            // Normal unit selection behavior
             UnitSelectionManager.Instance?.SelectUnit(this);
+        }
+        
+        /// <summary>
+        /// Check if this unit can be attacked by the currently previewed unit
+        /// </summary>
+        private bool CanBeAttackedByPreviewUnit()
+        {
+            // Get the currently previewed unit
+            var currentPreviewUnit = MovementPreview.Instance.GetCurrentPreviewUnit();
+            if (currentPreviewUnit == null || !currentPreviewUnit.IsAlive())
+                return false;
+                
+            // Check if this unit is an enemy of the previewed unit
+            if (unit.player == currentPreviewUnit.player)
+                return false; // Same team, can't attack
+                
+            // Check if this unit is within attack range
+            Vector2Int thisPosition = unit.GetGridPosition();
+            Vector2Int previewUnitPosition = currentPreviewUnit.GetGridPosition();
+            
+            // Calculate distance (should be 1 for adjacent attack)
+            int distance = Mathf.Abs(thisPosition.x - previewUnitPosition.x) + 
+                          Mathf.Abs(thisPosition.y - previewUnitPosition.y);
+                          
+            return distance <= 1; // Within attack range
         }
         
         public void Select()
@@ -129,6 +166,63 @@ namespace TurnClash.Units
         public bool IsSelected()
         {
             return isSelected;
+        }
+        
+        /// <summary>
+        /// Highlight this unit as attackable (red glow)
+        /// </summary>
+        public void HighlightAsAttackable()
+        {
+            if (isAttackableHighlighted) return;
+            
+            isAttackableHighlighted = true;
+            
+            if (useEmission)
+            {
+                EnableAttackableGlow();
+            }
+        }
+        
+        /// <summary>
+        /// Remove attackable highlight
+        /// </summary>
+        public void RemoveAttackableHighlight()
+        {
+            if (!isAttackableHighlighted) return;
+            
+            isAttackableHighlighted = false;
+            
+            if (useEmission)
+            {
+                // If unit is selected, restore selection glow, otherwise restore original
+                if (isSelected)
+                {
+                    EnableGlow();
+                }
+                else
+                {
+                    DisableGlow();
+                }
+            }
+        }
+        
+        private void EnableAttackableGlow()
+        {
+            foreach (var material in materials)
+            {
+                if (material != null)
+                {
+                    // Enable emission
+                    material.EnableKeyword("_EMISSION");
+                    
+                    // Set emission color with intensity
+                    Color emissionColor = attackableColor * glowIntensity;
+                    material.SetColor("_EmissionColor", emissionColor);
+                    
+                    // For URP/HDRP compatibility
+                    material.SetColor("_EmissiveColor", emissionColor);
+                }
+            }
         }
         
         private void OnDestroy()
